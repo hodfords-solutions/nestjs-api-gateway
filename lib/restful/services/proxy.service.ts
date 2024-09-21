@@ -156,11 +156,10 @@ export class ProxyService implements OnModuleInit {
     private async handleWebSocketRequest(request: Request, socket: Socket): Promise<void> {
         const serverName = this.getServerName(request.url);
         const proxyRequest = new ProxyRequest();
-        if (!await this.wsRequestService.handle(request, proxyRequest)){
+        if (!(await this.wsRequestService.handle(request, proxyRequest))) {
             throw new ForbiddenException();
         }
         await this.proxyServers[serverName].ws(request, socket, { headers: proxyRequest.getKebabHeaders() });
-
     }
 
     /**
@@ -185,7 +184,7 @@ export class ProxyService implements OnModuleInit {
 
         await this.throttlerService.checkLimitOfRequest(routerDetail, request);
         const proxyRequest = new ProxyRequest();
-        if (!await this.requestService.handle(routerDetail, request, proxyRequest)){
+        if (!(await this.requestService.handle(routerDetail, request, proxyRequest))) {
             throw new ForbiddenException();
         }
         await this.proxyServers[serverName].web(request, response, { headers: proxyRequest.getKebabHeaders() });

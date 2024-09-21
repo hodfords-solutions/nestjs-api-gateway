@@ -1,6 +1,5 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IncomingMessage } from 'http';
-import { kebabConvertKeys } from '../helpers/object.helper';
 import { ModulesContainer } from '@nestjs/core';
 import { getProviderByMetadata } from '../helpers/provider.helper';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
@@ -22,10 +21,10 @@ export class WsRequestService implements OnModuleInit {
         this.headerHandlers = getProviderByMetadata(WS_PROXY_MIDDLEWARE, this.modulesContainer);
     }
 
-    async handle(request: IncomingMessage,  proxyRequest: ProxyRequest) {
+    async handle(request: IncomingMessage, proxyRequest: ProxyRequest) {
         this.removeHeaders(proxyRequest);
         for (const handler of this.headerHandlers) {
-            if (!await handler.handle(request, proxyRequest)){
+            if (!(await handler.handle(request, proxyRequest))) {
                 return false;
             }
         }
