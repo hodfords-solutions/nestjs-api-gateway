@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
 
-export interface ProxyValidationInterface {
+export interface ProxyValidationHandler {
     isStaticRequest(request: IncomingMessage): boolean;
 }

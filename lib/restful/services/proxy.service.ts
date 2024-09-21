@@ -1,4 +1,5 @@
 import {
+    ForbiddenException,
     HttpStatus,
     Inject,
     Injectable,
@@ -20,6 +21,7 @@ import { Socket } from 'node:net';
 import { WsRequestService } from './ws-request.service';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { ProxyRequest } from '../models/proxy-request.model';
 
 @Injectable()
 export class ProxyService implements OnModuleInit {
@@ -153,8 +155,12 @@ export class ProxyService implements OnModuleInit {
      */
     private async handleWebSocketRequest(request: Request, socket: Socket): Promise<void> {
         const serverName = this.getServerName(request.url);
-        let headers: NodeJS.Dict<string> = await this.wsRequestService.getHeader(request);
-        await this.proxyServers[serverName].ws(request, socket, { headers });
+        const proxyRequest = new ProxyRequest();
+        if (!await this.wsRequestService.handle(request, proxyRequest)){
+            throw new ForbiddenException();
+        }
+        await this.proxyServers[serverName].ws(request, socket, { headers: proxyRequest.getKebabHeaders() });
+
     }
 
     /**
@@ -178,8 +184,11 @@ export class ProxyService implements OnModuleInit {
         }
 
         await this.throttlerService.checkLimitOfRequest(routerDetail, request);
-        const headers = await this.requestService.getHeader(routerDetail, request);
-        await this.proxyServers[serverName].web(request, response, { headers });
+        const proxyRequest = new ProxyRequest();
+        if (!await this.requestService.handle(routerDetail, request, proxyRequest)){
+            throw new ForbiddenException();
+        }
+        await this.proxyServers[serverName].web(request, response, { headers: proxyRequest.getKebabHeaders() });
 
         if (this.throttlerService.checkRouterHasCustomLimit(routerDetail)) {
             response.on('finish', async () => {
