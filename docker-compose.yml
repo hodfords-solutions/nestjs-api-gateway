@@ -1,0 +1,10 @@
+version: '3.3'
+services:
+    redis:
+        image: redis:5
+        ports:
+            - ${REDIS_PORT}:6379
+        networks:
+            - webnet
+networks:
+    webnet:
