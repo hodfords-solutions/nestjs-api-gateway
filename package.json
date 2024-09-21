@@ -15,7 +15,7 @@
   "homepage": "https://opensource.hodfords.uk/",
   "scripts": {
     "prebuild": "rimraf dist",
-    "postbuild": "cp {package.json,README.md} dist/lib",
+    "postbuild": "cp package.json dist/lib && cp README.md dist/lib",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"lib/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
