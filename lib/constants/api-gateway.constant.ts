@@ -1,0 +1,1 @@
+export const API_GATEWAY_OPTION = 'API_GATEWAY_OPTION';
