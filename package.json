@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
   "author": "",
-  "private": true,
+  "private": false,
   "license": "UNLICENSED",
   "repository": {
     "type": "git",
