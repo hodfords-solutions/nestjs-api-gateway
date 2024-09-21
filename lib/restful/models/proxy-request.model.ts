@@ -1,7 +1,7 @@
 import { kebabConvertKeys } from '../helpers/object.helper';
 
 export class ProxyRequest {
-    headers: { [key: string]: string };
+    headers: { [key: string]: string } = {};
 
     addHeader(key: string, value: string): void {
         this.headers[key] = value;

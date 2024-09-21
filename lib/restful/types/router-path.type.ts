@@ -1,5 +1,3 @@
-import { MatchFunction } from 'path-to-regexp';
-
 export type RateLimit = {
     ttl: number;
     limit: number;
@@ -10,7 +8,7 @@ export type RouterDetail = {
     path: string;
     isBearerAuth: boolean;
     routerPath: string;
-    pathMatch: MatchFunction;
+    pathMatch: any; // TODO: Fix this type PathMatch
     rateLimits: RateLimit[];
     allowPendingUser: boolean;
 };
