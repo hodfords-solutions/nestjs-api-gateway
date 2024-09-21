@@ -1,5 +1,5 @@
 {
-  "name": "@hodfords/api-gateway",
+  "name": "@hodfords/nestjs-api-gateway",
   "version": "10.0.0",
   "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
   "author": "",
