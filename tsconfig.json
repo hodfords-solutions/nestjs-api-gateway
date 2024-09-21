@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "target": "es2021",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "incremental": true,
+    "resolveJsonModule": true,
+    "paths": {
+      "~*": [
+        "src/*"
+      ],
+      "@hodfords/api-gateway": ["lib"]
+    },
+    "skipLibCheck": true
+  },
+  "include": ["lib", "src"],
+  "exclude": ["node_modules", "dist"],
+}

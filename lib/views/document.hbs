@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+        name="description"
+        content="SwaggerUI"
+    />
+    <title>SwaggerUI</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui.css" />
+    <link href="
+https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.1/themes/3.x/theme-feeling-blue.min.css
+" rel="stylesheet">
+    <style>
+        body {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui-bundle.js" crossorigin></script>
+<script src="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui-standalone-preset.js" crossorigin></script>
+<script>
+    const apiDocs = JSON.parse(`{{{ details }}}`);
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    let type = urlParams.get('type') || '{{ defaultDoc }}';
+    if (!apiDocs.some((doc) => doc.name === type)){
+        type = '{{ defaultDoc }}'
+    }
+    window.onload = () => {
+        window.ui = SwaggerUIBundle({
+            urls: apiDocs.map((doc) => ({
+                name: doc.name,
+                url: 'document-json?type=' + doc.name
+            })),
+            queryConfigEnabled: true,
+            'urls.primaryName': 'sample2',
+            dom_id: '#swagger-ui',
+            presets: [
+                SwaggerUIBundle.presets.apis,
+                SwaggerUIStandalonePreset
+            ],
+            layout: "StandaloneLayout",
+        });
+    };
+</script>
+</body>
+</html>
