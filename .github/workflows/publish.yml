@@ -4,14 +4,10 @@ on:
     branches:
       - main
 jobs:
+  lint:
+    uses: hodfords-solutions/actions/.github/workflows/lint.yaml@main
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '22.x'
-          registry-url: 'https://registry.npmjs.org'
-      - run: sh scripts/publish.sh
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+    uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
+    secrets:
+      DOC_SSH_PRIVATE_KEY: ${{ secrets.DOC_SSH_PRIVATE_KEY }}
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
