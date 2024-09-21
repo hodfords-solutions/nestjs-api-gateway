@@ -3,14 +3,15 @@ import { IncomingMessage } from 'http';
 import { kebabConvertKeys } from '../helpers/object.helper';
 import { ModulesContainer } from '@nestjs/core';
 import { getProviderByMetadata } from '../helpers/provider.helper';
-import { WS_HEADER_HANDLER } from '../decorators/ws-header-handler.decorator';
-import { WsHeaderHandlerInterface } from '../interfaces/ws-header-handler.interface';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { WsProxyMiddlewareHandler } from '../interfaces/ws-proxy-middleware.interface';
+import { WS_PROXY_MIDDLEWARE } from '../decorators/ws-proxy-middleware.decorator';
+import { ProxyRequest } from '../models/proxy-request.model';
 
 @Injectable()
 export class WsRequestService implements OnModuleInit {
-    private headerHandlers: WsHeaderHandlerInterface[] = [];
+    private headerHandlers: WsProxyMiddlewareHandler[] = [];
 
     constructor(
         private modulesContainer: ModulesContainer,
@@ -18,25 +19,25 @@ export class WsRequestService implements OnModuleInit {
     ) {}
 
     onModuleInit(): any {
-        this.headerHandlers = getProviderByMetadata(WS_HEADER_HANDLER, this.modulesContainer);
+        this.headerHandlers = getProviderByMetadata(WS_PROXY_MIDDLEWARE, this.modulesContainer);
     }
 
-    /**
-     * Get headers of a request and convert to kebab-case
-     * @param {IncomingMessage} request The request
-     * @returns {Promise<NodeJS.Dict<string>>} Object contains header detail
-     */
-    async getHeader(request: IncomingMessage): Promise<NodeJS.Dict<string>> {
-        const headers = {};
-        for (const excludeHeader of this.apiGatewayOption.excludeHeaders) {
-            if (request.headers[excludeHeader]) {
-                request.headers[excludeHeader] = '';
+    async handle(request: IncomingMessage,  proxyRequest: ProxyRequest) {
+        this.removeHeaders(proxyRequest);
+        for (const handler of this.headerHandlers) {
+            if (!await handler.handle(request, proxyRequest)){
+                return false;
             }
         }
-        for (const handler of this.headerHandlers) {
-            const newHeaders = await handler.handle(request);
-            Object.assign(headers, newHeaders);
+
+        return true;
+    }
+
+    private removeHeaders(proxyRequest: ProxyRequest) {
+        for (const excludeHeader of this.apiGatewayOption.excludeHeaders) {
+            if (proxyRequest.headers[excludeHeader]) {
+                proxyRequest.headers[excludeHeader] = '';
+            }
         }
-        return kebabConvertKeys<NodeJS.Dict<string>>(headers);
     }
 }

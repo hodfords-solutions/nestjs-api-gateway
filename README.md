@@ -54,30 +54,34 @@ export class AppModule {}
 ```
 
 #### Custom Authentication Header
-You can create a custom header handler by decorator the `@HeaderHandler`. The `handle` method will be called before the request is processed. The `handle` method accepts two parameters: `routerDetail` and `request`. The `routerDetail` parameter contains information about the route, while the `request` parameter is the incoming request object. The `handle` method should return a dictionary of headers to be added to the request.
+You can handle the authentication header by creating a custom authentication handler. The `handle` method will be called before the request is processed. The `handle` method accepts the incoming request object and should return a boolean value indicating whether the request is authenticated.
 ```typescript
-@HeaderHandler()
-export class AuthHeaderHandler implements HeaderHandlerInterface {
-    async handle(routerDetail: RouterDetail, request: IncomingMessage): Promise<NodeJS.Dict<string>> {
-        return { authUserId: '123' };
+@ProxyMiddleware()
+export class AuthenticationMiddleware implements ProxyMiddlewareHandler {
+    async handle(routerDetail: RouterDetail, request: IncomingMessage, proxyRequest: ProxyRequest): Promise<boolean> {
+        proxyRequest.addHeaders({ 'auth-user-id': '123' });
+        return true;
     }
 }
 ```
-Similarly, you can create a WebSocket header handler by decorating the `@WsHeaderHandler`. The `handle` method will be called before the WebSocket connection is established. The `handle` method accepts the incoming request object and should return a dictionary of headers to be added to the request.
+Similarly, you can create a WebSocket authentication handler by decorating the `@WsProxyMiddleware`. The `handle` method will be called before the request is processed. The `handle` method accepts the incoming request object and should return a boolean value indicating whether the request is authenticated.
 ```typescript
-@WsHeaderHandler()
-export class WsAuthHeaderHandler implements WsHeaderHandlerInterface {
-    async handle(request: IncomingMessage): Promise<NodeJS.Dict<string>> {
-        return { authUserId: '123' };
+@WsProxyMiddleware()
+export class WsAuthenticationMiddleware implements WsProxyMiddlewareHandler {
+    async handle(request: IncomingMessage, proxyRequest: ProxyRequest): Promise<boolean> {
+        proxyRequest.addHeaders({ 'auth-user-id': '123' });
+        return true;
     }
 }
 ```
 
 #### Static File
 You can create a static file handler by decorating the `@StaticRequestHandler`. The `isStaticRequest` method will be called before the request is processed. The `isStaticRequest` method accepts the incoming request object and should return a boolean value indicating whether the request is for a static file.
+
 ```typescript
+
 @ProxyValidation()
-export class StaticRequestHandler implements ProxyValidationInterface {
+export class StaticRequestMiddleware implements ProxyValidationHandler {
     isStaticRequest(request: IncomingMessage): boolean {
         return request.url.includes('/images/') || request.url.includes('/statics/');
     }

@@ -1,8 +1,8 @@
 import { IncomingMessage } from 'http';
-import { ProxyValidation, ProxyValidationInterface } from '@hodfords/api-gateway';
+import { ProxyValidation, ProxyValidationHandler } from '@hodfords/api-gateway';
 
 @ProxyValidation()
-export class StaticRequestHandler implements ProxyValidationInterface {
+export class StaticRequestMiddleware implements ProxyValidationHandler {
     isStaticRequest(request: IncomingMessage): boolean {
         return request.url.includes('/images/') || request.url.includes('/statics/');
     }

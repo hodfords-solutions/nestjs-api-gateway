@@ -3,9 +3,9 @@ import { AppController } from '~app.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ApiGatewayModule } from '@hodfords/api-gateway';
 import { redisConfig } from '~config/redis.config';
-import { AuthHeaderHandler } from '~handlers/auth-header.handler';
-import { StaticRequestHandler } from '~handlers/static-request.handler';
-import { WsAuthHeaderHandler } from '~handlers/ws-auth-header.handler';
+import { AuthenticationMiddleware } from '~middleware/authentication.middleware';
+import { StaticRequestMiddleware } from '~middleware/static-request.middleware';
+import { WsAuthenticationMiddleware } from '~middleware/ws-authentication.middleware';
 import { env } from '~config/env.config';
 
 @Module({
@@ -24,6 +24,6 @@ import { env } from '~config/env.config';
         })
     ],
     controllers: [AppController],
-    providers: [AuthHeaderHandler, StaticRequestHandler, WsAuthHeaderHandler]
+    providers: [AuthenticationMiddleware, StaticRequestMiddleware, WsAuthenticationMiddleware]
 })
 export class AppModule {}

@@ -1,6 +1,6 @@
 {
   "name": "@hodfords/api-gateway",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
   "author": "",
   "private": false,

@@ -1,20 +1,20 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { RouterDetail } from '../types/router-path.type';
-import { kebabConvertKeys } from '../helpers/object.helper';
 import { ModulesContainer } from '@nestjs/core';
-import { HEADER_HANDLER } from '../decorators/header-handler.decorator';
 import { getProviderByMetadata } from '../helpers/provider.helper';
-import { HeaderHandlerInterface } from '../interfaces/header-handler.interface';
-import { ProxyValidationInterface } from '../interfaces/proxy-validation.interface';
+import { ProxyMiddlewareHandler } from '../interfaces/proxy-middleware.interface';
+import { ProxyValidationHandler } from '../interfaces/proxy-validation.interface';
 import { PROXY_VALIDATION } from '../decorators/proxy-validation.decorator';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { ProxyRequest } from '../models/proxy-request.model';
+import { PROXY_MIDDLEWARE } from '../decorators/proxy-middleware.decorator';
 
 @Injectable()
 export class RequestService implements OnModuleInit {
-    private headerHandlers: HeaderHandlerInterface[] = [];
-    private proxyValidationHandler: ProxyValidationInterface[] = [];
+    private headerHandlers: ProxyMiddlewareHandler[] = [];
+    private proxyValidationHandler: ProxyValidationHandler[] = [];
 
     constructor(
         private modulesContainer: ModulesContainer,
@@ -22,28 +22,27 @@ export class RequestService implements OnModuleInit {
     ) {}
 
     onModuleInit(): any {
-        this.headerHandlers = getProviderByMetadata(HEADER_HANDLER, this.modulesContainer);
+        this.headerHandlers = getProviderByMetadata(PROXY_MIDDLEWARE, this.modulesContainer);
         this.proxyValidationHandler = getProviderByMetadata(PROXY_VALIDATION, this.modulesContainer);
     }
 
-    /**
-     * Get headers of a request and convert to kebab-case
-     * @param {RouterDetail} routerDetail Detail of router
-     * @param {IncomingMessage} request The request
-     * @returns {Promise<NodeJS.Dict<string>>} Object contains header detail
-     */
-    async getHeader(routerDetail: RouterDetail, request: IncomingMessage): Promise<NodeJS.Dict<string>> {
-        const headers = {};
-        for (const excludeHeader of this.apiGatewayOption.excludeHeaders) {
-            if (request.headers[excludeHeader]) {
-                request.headers[excludeHeader] = '';
+    async handle(routerDetail: RouterDetail,request: IncomingMessage,  proxyRequest: ProxyRequest) {
+        this.removeHeaders(proxyRequest);
+        for (const handler of this.headerHandlers) {
+            if (!await handler.handle(routerDetail, request, proxyRequest)){
+                return false;
             }
         }
-        for (const handler of this.headerHandlers) {
-            const newHeaders = await handler.handle(routerDetail, request);
-            Object.assign(headers, newHeaders);
+
+        return true;
+    }
+
+    private removeHeaders(proxyRequest: ProxyRequest) {
+        for (const excludeHeader of this.apiGatewayOption.excludeHeaders) {
+            if (proxyRequest.headers[excludeHeader]) {
+                proxyRequest.headers[excludeHeader] = '';
+            }
         }
-        return kebabConvertKeys<NodeJS.Dict<string>>(headers);
     }
 
     /**
