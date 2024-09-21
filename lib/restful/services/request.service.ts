@@ -26,10 +26,10 @@ export class RequestService implements OnModuleInit {
         this.proxyValidationHandler = getProviderByMetadata(PROXY_VALIDATION, this.modulesContainer);
     }
 
-    async handle(routerDetail: RouterDetail,request: IncomingMessage,  proxyRequest: ProxyRequest) {
+    async handle(routerDetail: RouterDetail, request: IncomingMessage, proxyRequest: ProxyRequest) {
         this.removeHeaders(proxyRequest);
         for (const handler of this.headerHandlers) {
-            if (!await handler.handle(routerDetail, request, proxyRequest)){
+            if (!(await handler.handle(routerDetail, request, proxyRequest))) {
                 return false;
             }
         }
