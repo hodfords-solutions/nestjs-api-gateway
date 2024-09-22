@@ -1,6 +1,6 @@
 {
   "name": "@hodfords/nestjs-api-gateway",
-  "version": "10.0.3",
+  "version": "10.0.4",
   "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
   "author": "",
   "private": false,
@@ -15,7 +15,7 @@
   "homepage": "https://opensource.hodfords.uk/",
   "scripts": {
     "prebuild": "rimraf dist",
-    "postbuild": "cp package.json dist/lib && cp README.md dist/lib",
+    "postbuild": "cp package.json dist/lib && cp README.md dist/lib && cp .npmrc dist/lib",
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"lib/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
