@@ -1,4 +1,4 @@
-import { RouterDetail } from '@hodfords/api-gateway';
+import { RouterDetail } from '../../index';
 import { IncomingMessage } from 'http';
 import { ProxyRequest } from '../models/proxy-request.model';
 

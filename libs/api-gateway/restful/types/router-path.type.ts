@@ -10,7 +10,7 @@ export type RouterDetail = {
     routerPath: string;
     pathMatch: any; // TODO: Fix this type PathMatch
     rateLimits: RateLimit[];
-    allowPendingUser: boolean;
+    extra?: NodeJS.Dict<string>;
 };
 
 export type RouterPathType = {

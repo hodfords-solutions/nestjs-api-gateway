@@ -17,10 +17,10 @@
       "~*": [
         "src/*"
       ],
-      "@hodfords/api-gateway": ["lib"]
+      "@hodfords/api-gateway": ["libs/api-gateway"]
     },
     "skipLibCheck": true
   },
-  "include": ["lib", "src", "test"],
+  "include": ["libs", "src", "test"],
   "exclude": ["node_modules", "dist"],
 }
