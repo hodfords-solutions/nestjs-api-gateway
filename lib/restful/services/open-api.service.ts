@@ -115,7 +115,11 @@ export class OpenApiService {
         if (!document.components.securitySchemes) {
             document.components.securitySchemes = {};
         }
-        document.components.securitySchemes.bearer = { scheme: 'bearer', bearerFormat: 'JWT', type: 'http' };
+        document.components.securitySchemes.bearer = {
+            scheme: 'bearer',
+            bearerFormat: 'JWT',
+            type: 'http'
+        };
         this.removeSecuritySchemes(document.components.securitySchemes);
         for (const path in document.paths) {
             for (const method in document.paths[path]) {

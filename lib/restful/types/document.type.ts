@@ -22,7 +22,12 @@ type PathType = {
 export type DocumentType = {
     openapi: string;
     paths: PathType;
-    info: { title: string; description: string; version: string; contact: NodeJS.Dict<any> };
+    info: {
+        title: string;
+        description: string;
+        version: string;
+        contact: NodeJS.Dict<any>;
+    };
     tags: { name: string; description: string }[];
     servers: [];
     components: {
