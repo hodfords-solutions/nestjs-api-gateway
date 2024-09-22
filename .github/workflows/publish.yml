@@ -9,7 +9,7 @@ jobs:
   build:
     uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
     with:
-      build_path: dist/lib
+      build_path: dist/libs/api-gateway;dist/libs/client
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
   update-docs:

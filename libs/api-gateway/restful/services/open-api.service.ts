@@ -63,7 +63,7 @@ export class OpenApiService {
                     routerPath: apiDetail.xRouterPath || this.convertToExpressPath(router),
                     pathMatch: patchMatch,
                     rateLimits: apiDetail.xRateLimits || [],
-                    allowPendingUser: apiDetail.xAllowPendingUser || false
+                    extra: this.getExtraDetails(apiDetail)
                 });
             }
         }
@@ -73,6 +73,17 @@ export class OpenApiService {
             docUrl: docUrl,
             router: paths
         };
+    }
+
+    getExtraDetails(apiDetail: any): NodeJS.Dict<any> {
+        const extraDetail = {};
+        for (const key in apiDetail) {
+            if (!['parameters', 'responses', 'xRateLimits', 'xRouterPath'].includes(key)) {
+                extraDetail[key] = apiDetail[key];
+            }
+        }
+
+        return extraDetail;
     }
 
     checkRouterNeedBearerToken(apiDetail): boolean {
