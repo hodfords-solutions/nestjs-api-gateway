@@ -9,8 +9,8 @@
         "watchAssets": true
       },
       {
-        "include": "../lib/**/*.hbs",
-        "outDir": "dist/lib",
+        "include": "../libs/**/*.hbs",
+        "outDir": "dist/libs",
         "watchAssets": true
       },
       {
