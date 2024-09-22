@@ -8,3 +8,4 @@ export * from './restful/interfaces/proxy-middleware.interface';
 export * from './restful/interfaces/ws-proxy-middleware.interface';
 export * from './restful/helpers/string.helper';
 export * from './restful/models/proxy-request.model';
+export * from './throttlers/exceptions/too-many-request.exception';
