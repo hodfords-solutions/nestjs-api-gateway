@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="http://opensource.hodfords.uk" target="blank"><img src="https://opensource.hodfords.uk/img/logo.svg" width="320" alt="Nest Logo" /></a>
+</p>
+
 # API Gateway
 
 The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture. This repository serves as the central hub for collaboration, version control, and issue tracking related to the development and enhancement of the API Gateway.
