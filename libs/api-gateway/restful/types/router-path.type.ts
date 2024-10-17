@@ -10,7 +10,7 @@ export type RouterDetail = {
     routerPath: string;
     pathMatch: any; // TODO: Fix this type PathMatch
     rateLimits: RateLimit[];
-    extra?: NodeJS.Dict<string>;
+    extra?: NodeJS.Dict<any>;
 };
 
 export type RouterPathType = {
