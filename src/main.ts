@@ -3,6 +3,8 @@ import { AppModule } from '~app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { env } from '~config/env.config';
+import { json, urlencoded } from 'express';
+import { rawBodyBufferHelper } from 'libs/api-gateway/restful/helpers/raw-body-buffer.helper';
 
 /**
  * Initialize and configures a NestJS application,
@@ -15,6 +17,9 @@ async function bootstrap(): Promise<void> {
     app.setViewEngine('hbs');
 
     app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+
+    app.use(json({ verify: rawBodyBufferHelper, limit: '10mb' }));
+    app.use(urlencoded({ verify: rawBodyBufferHelper, limit: '10mb', extended: true }));
 
     await app.listen(env.APP_PORT);
 }
