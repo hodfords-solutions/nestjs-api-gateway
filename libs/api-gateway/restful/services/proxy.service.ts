@@ -22,6 +22,7 @@ import { WsRequestService } from './ws-request.service';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 import { ProxyRequest } from '../models/proxy-request.model';
+import { STRIPE_SIGNATURE } from '../constants/special-headers.constant';
 
 @Injectable()
 export class ProxyService implements OnModuleInit {
@@ -87,6 +88,16 @@ export class ProxyService implements OnModuleInit {
             if (contentType && contentType.startsWith('multipart/form-data;')) {
                 return;
             }
+            if (req.headers[STRIPE_SIGNATURE]) {
+                if (req.body) {
+                    const bodyData = (req as NodeJS.Dict<any>).rawBody;
+                    proxyReq.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+                    proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+                    proxyReq.write(bodyData);
+                }
+                return;
+            }
+
             if (req.body) {
                 const bodyData = JSON.stringify(req.body);
                 proxyReq.setHeader('Content-Type', 'application/json');
