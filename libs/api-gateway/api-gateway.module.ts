@@ -11,7 +11,7 @@ export class ApiGatewayModule {
         return {
             global: true,
             module: ApiGatewayModule,
-            imports: [ThrottlerModule.forRoot(option.throttler), RestfulModule],
+            imports: [ThrottlerModule.forRoot(option.throttler), RestfulModule.forRoot(option.restful)],
             controllers: [],
             providers: [
                 {

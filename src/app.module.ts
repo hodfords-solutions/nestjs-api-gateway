@@ -20,7 +20,8 @@ import { env } from '~config/env.config';
                 globalRateLimit: 60,
                 isEnable: true,
                 globalRateLimitTTL: 60
-            }
+            },
+            restful: { isEnableDocument: true }
         })
     ],
     controllers: [AppController],
