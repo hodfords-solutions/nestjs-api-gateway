@@ -12,7 +12,6 @@ import { RestfulOption } from './types/restful-option.type';
 @Module({})
 export class RestfulModule {
     static forRoot(option: RestfulOption): DynamicModule {
-        console.log(option.isEnableDocument);
         return {
             module: RestfulModule,
             imports: [HttpModule],
