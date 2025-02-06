@@ -3,11 +3,25 @@ import { ThrottlerModule } from './throttlers/throttler.module';
 import { RestfulModule } from './restful/restful.module';
 import { ApiGatewayOption } from './types/api-gateway-option.type';
 import { API_GATEWAY_OPTION } from './constants/api-gateway.constant';
+import { REDIS_OPTION } from './redis/constants/redis.constant';
+import Redis from 'ioredis';
 
 @Module({})
 export class ApiGatewayModule {
     static forRoot(option: ApiGatewayOption): DynamicModule {
         option.libraryPath = __dirname;
+
+        const redisProvider = {
+            provide: REDIS_OPTION,
+            useFactory: () => {
+                return new Redis({
+                    host: option.redis?.host,
+                    port: option.redis?.port,
+                    db: option.redis?.db
+                });
+            }
+        };
+
         return {
             global: true,
             module: ApiGatewayModule,
@@ -17,13 +31,15 @@ export class ApiGatewayModule {
                 {
                     provide: API_GATEWAY_OPTION,
                     useValue: option
-                }
+                },
+                redisProvider
             ],
             exports: [
                 {
                     provide: API_GATEWAY_OPTION,
                     useValue: option
-                }
+                },
+                redisProvider
             ]
         };
     }
