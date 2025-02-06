@@ -5,7 +5,7 @@ import { ProxyService } from '../services/proxy.service';
 export class ProxyController {
     constructor(private proxyService: ProxyService) {}
 
-    @All('*')
+    @All('/{*splat}')
     async proxy(@Req() req, @Res() res): Promise<void> {
         await this.proxyService.handleRequest(req, res);
     }

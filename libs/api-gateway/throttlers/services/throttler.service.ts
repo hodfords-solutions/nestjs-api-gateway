@@ -1,5 +1,4 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectRedis } from '@songkeys/nestjs-redis';
 import { Request, Response } from 'express';
 import Redis from 'ioredis';
 import { ttlToHumanReadable } from '../../restful/helpers/string.helper';
@@ -8,14 +7,15 @@ import { LUA_INCREASE_AND_GET_SCRIPT } from '../constants/lua-script.constant';
 import { RATE_LIMIT_KEY, THROTTLER_OPTION } from '../constants/rate-limit.constant';
 import { TooManyRequestException } from '../exceptions/too-many-request.exception';
 import { ThrottlerOption } from '../types/throttler-option.type';
+import { REDIS_OPTION } from '../../redis/constants/redis.constant';
 
 @Injectable()
 export class ThrottlerService implements OnModuleInit {
     private luaSha: string;
 
     constructor(
-        @InjectRedis() private readonly redis: Redis,
-        @Inject(THROTTLER_OPTION) private option: ThrottlerOption
+        @Inject(THROTTLER_OPTION) private option: ThrottlerOption,
+        @Inject(REDIS_OPTION) private readonly redis: Redis
     ) {}
 
     /**
