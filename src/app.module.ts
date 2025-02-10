@@ -21,7 +21,12 @@ import { env } from '~config/env.config';
                 isEnable: true,
                 globalRateLimitTTL: 60
             },
-            restful: { isEnableDocument: true }
+            restful: { isEnableDocument: true },
+            redis: {
+                host: env.REDIS.HOST,
+                port: env.REDIS.PORT,
+                db: env.REDIS.DB
+            }
         })
     ],
     controllers: [AppController],
