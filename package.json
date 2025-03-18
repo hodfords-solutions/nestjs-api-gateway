@@ -1,6 +1,6 @@
 {
   "name": "@hodfords/nestjs-api-gateway",
-  "version": "11.0.3",
+  "version": "11.0.4",
   "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
   "author": "",
   "private": false,
@@ -27,13 +27,13 @@
     "test:cov": "jest --coverage"
   },
   "dependencies": {
-    "@keyv/redis": "4.3.1",
+    "@keyv/redis": "4.3.2",
     "@nestjs/cache-manager": "^3.0.0",
     "@squarecloud/http-proxy": "1.2.0"
   },
   "devDependencies": {
-    "@hodfords/nestjs-eslint-config": "^11.0.0",
-    "@hodfords/nestjs-prettier-config": "^11.0.0",
+    "@hodfords/nestjs-eslint-config": "^11.0.1",
+    "@hodfords/nestjs-prettier-config": "^11.0.1",
     "@nestjs/axios": "4.0.0",
     "@nestjs/cli": "11.0.5",
     "@nestjs/common": "11.0.11",
