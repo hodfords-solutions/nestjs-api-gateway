@@ -43,6 +43,7 @@ Import the `ApiGatewayModule` and use the `forRoot` method to configure the API 
         ApiGatewayModule.forRoot({
             apiServices: env.API_SERVICES,
             openApiSecurityKeys: ['auth-user-id'],
+            openApiSecurityApiKeys: ['x-api-key'],
             excludeHeaders: ['auth-user-id'],
             throttler: {
                 globalRateLimit: 60,

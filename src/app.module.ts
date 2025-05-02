@@ -15,6 +15,7 @@ import { env } from '~config/env.config';
         ApiGatewayModule.forRoot({
             apiServices: env.API_SERVICES,
             openApiSecurityKeys: ['auth-user-id'],
+            openApiSecurityApiKeys: ['x-api-key'],
             excludeHeaders: ['auth-user-id'],
             throttler: {
                 globalRateLimit: 60,
