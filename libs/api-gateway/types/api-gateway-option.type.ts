@@ -7,6 +7,7 @@ export type ApiGatewayOption = {
     apiServices: ApiServiceDetail[];
     excludeHeaders: string[];
     openApiSecurityKeys: string[];
+    openApiSecurityApiKeys?: string[];
     throttler: ThrottlerOption;
     restful: RestfulOption;
     libraryPath?: string;

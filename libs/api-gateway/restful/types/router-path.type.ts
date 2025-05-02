@@ -7,6 +7,7 @@ export type RateLimit = {
 export type RouterDetail = {
     path: string;
     isBearerAuth: boolean;
+    isApiKeyAuth: boolean;
     routerPath: string;
     pathMatch: any; // TODO: Fix this type PathMatch
     rateLimits: RateLimit[];

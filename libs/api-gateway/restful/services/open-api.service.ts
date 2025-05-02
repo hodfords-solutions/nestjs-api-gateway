@@ -60,6 +60,7 @@ export class OpenApiService {
                 paths[method].push({
                     path: router,
                     isBearerAuth: this.checkRouterNeedBearerToken(apiDetail),
+                    isApiKeyAuth: this.checkRouterNeedApiKey(apiDetail),
                     routerPath: apiDetail.xRouterPath || this.convertToExpressPath(router),
                     pathMatch: patchMatch,
                     rateLimits: apiDetail.xRateLimits || [],
@@ -95,6 +96,24 @@ export class OpenApiService {
                 return true;
             }
             for (const securityKey of this.apiGatewayOption.openApiSecurityKeys) {
+                if (security[securityKey]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    checkRouterNeedApiKey(apiDetail): boolean {
+        if (!apiDetail.security) {
+            return false;
+        }
+        for (const security of apiDetail.security) {
+            if (this.apiGatewayOption.openApiSecurityApiKeys?.length) {
+                return false;
+            }
+
+            for (const securityKey of this.apiGatewayOption.openApiSecurityApiKeys) {
                 if (security[securityKey]) {
                     return true;
                 }
