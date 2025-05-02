@@ -109,7 +109,7 @@ export class OpenApiService {
             return false;
         }
         for (const security of apiDetail.security) {
-            if (this.apiGatewayOption.openApiSecurityApiKeys?.length) {
+            if (!this.apiGatewayOption.openApiSecurityApiKeys?.length) {
                 return false;
             }
 
