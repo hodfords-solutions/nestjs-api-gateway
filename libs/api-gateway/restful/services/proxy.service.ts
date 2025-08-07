@@ -126,11 +126,12 @@ export class ProxyService implements OnModuleInit {
      * @param {string} prefix A prefix
      */
     private rewritePath(request: ClientRequest, prefix: string): void {
-        let newPath = this.removePath(prefix, request.path);
-        if (!newPath.endsWith('/')) {
-            newPath += '/';
+        const newPath = this.removePath(prefix, request.path);
+        const url = new URL(newPath, 'http://dummy-base.local');
+        if (!url.pathname.endsWith('/')) {
+            url.pathname += '/';
         }
-        request.path = newPath;
+        request.path = url.pathname + url.search;
     }
 
     /**
