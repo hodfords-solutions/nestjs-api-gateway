@@ -80,7 +80,8 @@ export class ProxyService implements OnModuleInit {
     private createProxyServer(apiService: ApiServiceDetail): void {
         this.proxyServers[apiService.prefix] = createProxyServer({
             target: apiService.host,
-            ws: true
+            ws: true,
+            followRedirects: false
         });
         this.proxyServers[apiService.prefix].on('proxyReq', (proxyReq, req: Request, res: Response) => {
             this.rewritePath(proxyReq, apiService.prefix);
@@ -103,6 +104,11 @@ export class ProxyService implements OnModuleInit {
                 proxyReq.setHeader('Content-Type', 'application/json');
                 proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
                 proxyReq.write(bodyData);
+            }
+        });
+        this.proxyServers[apiService.prefix].on('proxyRes', (proxyRes, req: Request, res: Response) => {
+            if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400) {
+                proxyRes.headers.location = '/' + apiService.prefix + proxyRes.headers.location;
             }
         });
         this.proxyServers[apiService.prefix].on('error', (error, req, res: ServerResponse) => {
