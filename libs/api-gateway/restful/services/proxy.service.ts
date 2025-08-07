@@ -80,8 +80,7 @@ export class ProxyService implements OnModuleInit {
     private createProxyServer(apiService: ApiServiceDetail): void {
         this.proxyServers[apiService.prefix] = createProxyServer({
             target: apiService.host,
-            ws: true,
-            followRedirects: false
+            ws: true
         });
         this.proxyServers[apiService.prefix].on('proxyReq', (proxyReq, req: Request, res: Response) => {
             this.rewritePath(proxyReq, apiService.prefix);
@@ -127,7 +126,11 @@ export class ProxyService implements OnModuleInit {
      * @param {string} prefix A prefix
      */
     private rewritePath(request: ClientRequest, prefix: string): void {
-        request.path = this.removePath(prefix, request.path);
+        let newPath = this.removePath(prefix, request.path);
+        if (!newPath.endsWith('/')) {
+            newPath += '/';
+        }
+        request.path = newPath;
     }
 
     /**
