@@ -13,3 +13,8 @@ export function addApiExtension(descriptor: PropertyDescriptor, key: string, val
 
     return descriptor;
 }
+
+export function getApiExtensions(descriptor: PropertyDescriptor, key: string): any[] {
+    const apiExtension = Reflect.getMetadata(DECORATORS.API_EXTENSION, descriptor.value) || {};
+    return apiExtension[key] || [];
+}

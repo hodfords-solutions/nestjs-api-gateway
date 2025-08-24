@@ -16,7 +16,7 @@ import { env } from '~config/env.config';
             apiServices: env.API_SERVICES,
             openApiSecurityKeys: ['auth-user-id'],
             openApiSecurityApiKeys: ['x-api-key'],
-            excludeHeaders: ['auth-user-id'],
+            excludeHeaders: ['auth-user-id', 'permission-in-any-guard'],
             throttler: {
                 globalRateLimit: 60,
                 isEnable: true,

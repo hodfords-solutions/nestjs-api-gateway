@@ -151,6 +151,7 @@ export class OpenApiService {
             type: 'http'
         };
         this.removeSecuritySchemes(document.components.securitySchemes);
+        this.removeHeader(document);
         for (const path in document.paths) {
             for (const method in document.paths[path]) {
                 const securities = document.paths[path][method].security || [];
@@ -167,6 +168,19 @@ export class OpenApiService {
             ];
         }
         return document;
+    }
+
+    removeHeader(document: any) {
+        for (const path in document.paths) {
+            for (const method in document.paths[path]) {
+                document.paths[path][method].parameters = document.paths[path][method].parameters.filter((param) => {
+                    return (
+                        param.in !== 'header' ||
+                        !this.apiGatewayOption.excludeHeaders.includes(param.name.toLowerCase())
+                    );
+                });
+            }
+        }
     }
 
     removeSecuritySchemes(securitySchemes): void {
