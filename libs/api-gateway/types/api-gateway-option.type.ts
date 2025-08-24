@@ -12,4 +12,5 @@ export type ApiGatewayOption = {
     restful: RestfulOption;
     libraryPath?: string;
     redis: RedisOptionType;
+    swaggerOptions?: any;
 };

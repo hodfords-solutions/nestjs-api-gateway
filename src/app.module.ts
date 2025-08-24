@@ -22,6 +22,9 @@ import { env } from '~config/env.config';
                 isEnable: true,
                 globalRateLimitTTL: 60
             },
+            swaggerOptions: {
+                showExtensions: true
+            },
             restful: { isEnableDocument: true },
             redis: {
                 host: env.REDIS.HOST,

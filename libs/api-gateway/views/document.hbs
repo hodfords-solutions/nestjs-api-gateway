@@ -25,6 +25,7 @@ https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.1/themes/3.x/theme-feeling-bl
 <script src="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui-standalone-preset.js" crossorigin></script>
 <script>
     const apiDocs = JSON.parse(`{{{ details }}}`);
+    const swaggerOptions = JSON.parse(`{{{ swaggerOptions }}}`);
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     let type = urlParams.get('type') || '{{ defaultDoc }}';
@@ -45,6 +46,7 @@ https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.1/themes/3.x/theme-feeling-bl
                 SwaggerUIStandalonePreset
             ],
             layout: "StandaloneLayout",
+            ...swaggerOptions
         });
     };
 </script>

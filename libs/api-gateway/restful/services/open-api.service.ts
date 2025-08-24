@@ -137,7 +137,11 @@ export class OpenApiService {
             });
             defaultDoc = server;
         }
-        return { details: JSON.stringify(details), defaultDoc };
+        return {
+            details: JSON.stringify(details),
+            defaultDoc,
+            swaggerOptions: JSON.stringify(this.apiGatewayOption.swaggerOptions || {})
+        };
     }
 
     async getDocument(server: string): Promise<any> {
