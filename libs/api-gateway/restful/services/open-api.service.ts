@@ -49,7 +49,13 @@ export class OpenApiService {
             post: [],
             delete: [],
             patch: [],
-            put: []
+            put: [],
+            /*
+             * For oidc purposes
+             **/
+            options: [],
+            head: [],
+            search: []
         };
         for (const router in doc.paths) {
             for (const method in doc.paths[router]) {
@@ -57,6 +63,7 @@ export class OpenApiService {
                 const patchMatch = match(apiDetail.xRouterPath || this.convertToExpressPath(router), {
                     decode: decodeURIComponent
                 });
+
                 paths[method].push({
                     path: router,
                     isBearerAuth: this.checkRouterNeedBearerToken(apiDetail),
