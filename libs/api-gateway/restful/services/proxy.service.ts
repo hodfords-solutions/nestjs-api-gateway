@@ -23,6 +23,7 @@ import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 import { ProxyRequest } from '../models/proxy-request.model';
 import { STRIPE_SIGNATURE } from '../constants/special-headers.constant';
+import { isReqUrlInWhitelist } from '../helpers/whitelist.helper';
 
 @Injectable()
 export class ProxyService implements OnModuleInit {
@@ -106,7 +107,7 @@ export class ProxyService implements OnModuleInit {
             }
         });
         this.proxyServers[apiService.prefix].on('proxyRes', (proxyRes, req: Request, res: Response) => {
-            if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400) {
+            if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && !isReqUrlInWhitelist(req.url)) {
                 proxyRes.headers.location = '/' + apiService.prefix + proxyRes.headers.location;
             }
         });
