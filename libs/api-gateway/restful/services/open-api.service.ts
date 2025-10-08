@@ -65,6 +65,8 @@ export class OpenApiService {
                 });
 
                 paths[method].push({
+                    operationId: apiDetail.operationId,
+                    description: apiDetail.description,
                     path: router,
                     isBearerAuth: this.checkRouterNeedBearerToken(apiDetail),
                     isApiKeyAuth: this.checkRouterNeedApiKey(apiDetail),

@@ -5,6 +5,8 @@ export type RateLimit = {
 };
 
 export type RouterDetail = {
+    operationId: string;
+    description: string;
     path: string;
     isBearerAuth: boolean;
     isApiKeyAuth: boolean;
