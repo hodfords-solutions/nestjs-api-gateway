@@ -201,10 +201,6 @@ export class ProxyService implements OnModuleInit {
             request.method,
             this.removePath(serverName, request.url)
         );
-        if (request.url.startsWith('/oidc')) {
-            this.proxyServers[serverName].web(request, response);
-            return;
-        }
 
         if (!routerDetail) {
             throw new MethodNotAllowedException();
