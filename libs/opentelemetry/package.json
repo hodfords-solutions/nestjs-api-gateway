@@ -1,0 +1,25 @@
+{
+  "name": "@hodfords/nestjs-api-gateway-opentelemetry",
+  "version": "11.0.0",
+  "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
+  "author": "",
+  "private": false,
+  "license": "UNLICENSED",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hodfords-solutions/nestjs-api-gateway.git"
+  },
+  "bugs": {
+    "url": "https://github.com/hodfords-solutions/nestjs-api-gateway/issues"
+  },
+  "homepage": "https://opensource.hodfords.uk/",
+  "scripts": {},
+  "dependencies": {
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.65.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.206.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
+    "@opentelemetry/sdk-node": "^0.206.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0"
+  }
+}
