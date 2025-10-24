@@ -1,6 +1,6 @@
 {
   "name": "@hodfords/nestjs-api-gateway",
-  "version": "11.0.20",
+  "version": "11.0.20-rc.1",
   "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
   "author": "",
   "private": false,
@@ -29,7 +29,7 @@
   "dependencies": {
     "@keyv/redis": "5.1.1",
     "@nestjs/cache-manager": "^3.0.1",
-    "@squarecloud/http-proxy": "1.2.0"
+    "undici": "^7.16.0"
   },
   "devDependencies": {
     "@hodfords/nestjs-eslint-config": "^11.0.2",
@@ -43,8 +43,13 @@
     "@nestjs/schematics": "11.0.7",
     "@nestjs/swagger": "11.2.0",
     "@nestjs/testing": "11.1.6",
+    "@opentelemetry/api": "^1.9.0",
+    "@opentelemetry/auto-instrumentations-node": "^0.65.0",
+    "@opentelemetry/exporter-trace-otlp-grpc": "^0.206.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
+    "@opentelemetry/sdk-node": "^0.206.0",
+    "@opentelemetry/sdk-trace-base": "^2.1.0",
     "@types/express": "5.0.3",
-    "@types/http-proxy": "1.17.16",
     "@types/lodash": "4.17.20",
     "@types/node": "24.3.0",
     "axios": "1.11.0",
@@ -61,13 +66,7 @@
     "rxjs": "7.8.2",
     "source-map-support": "0.5.21",
     "ts-loader": "9.5.4",
-    "typescript": "5.9.2",
-    "@opentelemetry/api": "^1.9.0",
-    "@opentelemetry/auto-instrumentations-node": "^0.65.0",
-    "@opentelemetry/exporter-trace-otlp-grpc": "^0.206.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.206.0",
-    "@opentelemetry/sdk-node": "^0.206.0",
-    "@opentelemetry/sdk-trace-base": "^2.1.0"
+    "typescript": "5.9.2"
   },
   "peerDependencies": {
     "@nestjs/schedule": "*",

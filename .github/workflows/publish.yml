@@ -2,7 +2,7 @@ name: Publish Package to npmjs
 on:
   push:
     branches:
-      - main
+      - beta
 jobs:
   lint:
     uses: hodfords-solutions/actions/.github/workflows/lint.yaml@main
