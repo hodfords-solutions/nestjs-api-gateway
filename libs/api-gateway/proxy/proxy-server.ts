@@ -69,6 +69,7 @@ export class ProxyServer {
             const proxyRequestOptions: RequestOptions = {
                 path: req.path,
                 method: req.method,
+                query: req.query,
                 headers: this.getRequestHeaders(req, options.headers),
                 body: req
             };
