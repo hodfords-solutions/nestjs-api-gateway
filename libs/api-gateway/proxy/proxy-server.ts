@@ -73,7 +73,7 @@ export class ProxyServer {
                 query: req.query,
                 headers: this.getRequestHeaders(req, options.headers),
                 body: req,
-                signal: abortController
+                signal: abortController.signal
             };
             if (this.options.rewritePath) {
                 proxyRequestOptions.path = this.options.rewritePath(req);
