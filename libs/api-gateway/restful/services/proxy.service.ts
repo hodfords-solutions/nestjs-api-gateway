@@ -96,6 +96,10 @@ export class ProxyService implements OnModuleInit {
     }
 
     handleProxyError(error: Error, req: Request, res: Response): void {
+        if (res.writableEnded) {
+            this.logger.error(`Error: ${error.message}`);
+            return;
+        }
         const errorResponse = {
             message: 'Service unavailable.'
         };

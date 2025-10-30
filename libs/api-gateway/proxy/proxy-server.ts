@@ -66,16 +66,25 @@ export class ProxyServer {
 
     async forwardRequest(req: Request, res: ServerResponse, options: { headers?: NodeJS.Dict<string> } = {}) {
         try {
+            const abortController = new AbortController();
             const proxyRequestOptions: RequestOptions = {
                 path: req.path,
                 method: req.method,
                 query: req.query,
                 headers: this.getRequestHeaders(req, options.headers),
-                body: req
+                body: req,
+                signal: abortController
             };
             if (this.options.rewritePath) {
                 proxyRequestOptions.path = this.options.rewritePath(req);
             }
+
+            res.on('close', () => {
+                const aborted = !res.writableFinished;
+                if (aborted) {
+                    abortController.abort();
+                }
+            });
 
             const response = await this.pool.request(proxyRequestOptions);
             const { statusCode, headers, body } = response;
