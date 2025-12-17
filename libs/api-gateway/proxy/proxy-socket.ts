@@ -42,7 +42,7 @@ export class ProxySocket {
         );
     }
 
-    handleWebsocket() {
+    handleWebsocket(extraHeaders: NodeJS.Dict<string> = {}) {
         if (!this.checkMethodAndHeader()) {
             return this.socket.destroy();
         }
@@ -52,7 +52,10 @@ export class ProxySocket {
             host: url.host,
             hostname: url.hostname,
             port: url.port,
-            headers: this.req.headers,
+            headers: {
+                ...this.req.headers,
+                ...extraHeaders
+            },
             path: this.req.url
         };
         const proxyReq = http.request(requestOptions);

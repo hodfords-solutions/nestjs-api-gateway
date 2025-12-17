@@ -61,7 +61,7 @@ export class ProxyServer {
 
     async forwardWebsocket(req: Request, socket: Socket, options: { headers?: NodeJS.Dict<string> } = {}) {
         const target = new ProxySocket(req, socket, this.options);
-        target.handleWebsocket();
+        target.handleWebsocket(options.headers);
     }
 
     async forwardRequest(req: Request, res: ServerResponse, options: { headers?: NodeJS.Dict<string> } = {}) {
