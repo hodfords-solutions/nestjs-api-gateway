@@ -15,4 +15,5 @@ export type ApiGatewayOption = {
     redis: RedisOptionType;
     swaggerOptions?: any;
     pool: Pool.Options;
+    bypassRoutePrefixes?: string[];
 };

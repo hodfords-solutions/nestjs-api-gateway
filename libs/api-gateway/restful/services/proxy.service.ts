@@ -183,16 +183,17 @@ export class ProxyService implements OnModuleInit {
      */
     private async handleHttpRequest(request: Request, response: Response): Promise<void> {
         const serverName = this.getServerName(request.url);
+        const byPassRoutePrefixes = this.apiGatewayOption.bypassRoutePrefixes || [];
+        if (byPassRoutePrefixes.some((prefix) => request.url.startsWith(`${prefix}`))) {
+            await this.proxyServers[serverName].forwardRequest(request, response);
+            return;
+        }
+
         const routerDetail = this.swaggerService.getRouterDetail(
             serverName,
             request.method,
             this.removePath(serverName, request.url)
         );
-
-        if (request.url.startsWith('/oidc/')) {
-            await this.proxyServers[serverName].forwardRequest(request, response);
-            return;
-        }
 
         if (!routerDetail) {
             throw new MethodNotAllowedException();
