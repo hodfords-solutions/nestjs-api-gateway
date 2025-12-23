@@ -90,7 +90,11 @@ export class ProxyService implements OnModuleInit {
     }
 
     handleProxyResponse(apiService: ApiServiceDetail, proxyRes: ResponseData, req: Request): void {
-        if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && !isReqUrlInWhitelist(req.url)) {
+        if (
+            proxyRes.statusCode >= 300 &&
+            proxyRes.statusCode < 400 &&
+            !isReqUrlInWhitelist(req.url, this.apiGatewayOption.bypassRoutePrefixes || [])
+        ) {
             proxyRes.headers.location = '/' + apiService.prefix + proxyRes.headers.location;
         }
     }
