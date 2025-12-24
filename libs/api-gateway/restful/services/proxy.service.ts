@@ -120,7 +120,7 @@ export class ProxyService implements OnModuleInit {
     private rewritePath(request: Request, prefix: string): string {
         const newPath = this.removePath(prefix, request.path);
         const url = new URL(newPath, 'http://dummy-base.local');
-        if (!url.pathname.endsWith('/')) {
+        if (!url.pathname.endsWith('/') && !this.requestService.isStaticRequest(request)) {
             url.pathname += '/';
         }
         return url.pathname + url.search;
