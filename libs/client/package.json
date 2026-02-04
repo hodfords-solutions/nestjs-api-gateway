@@ -1,25 +1,23 @@
 {
-  "name": "@hodfords/nestjs-api-gateway-client",
-  "version": "11.0.9",
-  "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
-  "author": "",
-  "private": false,
-  "license": "UNLICENSED",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/hodfords-solutions/nestjs-api-gateway.git"
-  },
-  "bugs": {
-    "url": "https://github.com/hodfords-solutions/nestjs-api-gateway/issues"
-  },
-  "homepage": "https://opensource.hodfords.uk/",
-  "scripts": {
-
-  },
-  "devDependencies": {
-    "@nestjs/swagger": "11.0.6"
-  },
-  "peerDependencies": {
-    "@nestjs/swagger": "*"
-  }
+    "name": "@hodfords/nestjs-api-gateway-client",
+    "version": "11.0.10",
+    "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
+    "author": "",
+    "private": false,
+    "license": "UNLICENSED",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/hodfords-solutions/nestjs-api-gateway.git"
+    },
+    "bugs": {
+        "url": "https://github.com/hodfords-solutions/nestjs-api-gateway/issues"
+    },
+    "homepage": "https://opensource.hodfords.uk/",
+    "scripts": {},
+    "devDependencies": {
+        "@nestjs/swagger": "11.0.6"
+    },
+    "peerDependencies": {
+        "@nestjs/swagger": "*"
+    }
 }
