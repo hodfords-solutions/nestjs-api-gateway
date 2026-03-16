@@ -30,6 +30,10 @@ import { env } from '~config/env.config';
                 host: env.REDIS.HOST,
                 port: env.REDIS.PORT,
                 db: env.REDIS.DB
+            },
+            pool: {
+                connections: 100,
+                pipelining: 1
             }
         })
     ],

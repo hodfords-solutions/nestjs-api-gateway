@@ -10,11 +10,9 @@ import {
 } from '@nestjs/common';
 import { OpenApiService } from './open-api.service';
 import { ApiServiceDetail } from '../types/api-service.type';
-import Server, { createProxyServer } from '@squarecloud/http-proxy';
 import { Request, Response } from 'express';
 import { RequestService } from './request.service';
 import { ThrottlerService } from '../../throttlers/services/throttler.service';
-import { ClientRequest, ServerResponse } from 'http';
 import { DEFAULT_SERVER_NAME } from '../constants/default-server-name.constant';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Socket } from 'node:net';
@@ -22,13 +20,15 @@ import { WsRequestService } from './ws-request.service';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 import { ProxyRequest } from '../models/proxy-request.model';
-import { STRIPE_SIGNATURE } from '../constants/special-headers.constant';
 import { isReqUrlInWhitelist } from '../helpers/whitelist.helper';
+import { ProxyServer } from '../../proxy/proxy-server';
+import { Dispatcher } from 'undici';
+import ResponseData = Dispatcher.ResponseData;
 
 @Injectable()
 export class ProxyService implements OnModuleInit {
     private logger = new Logger(ProxyService.name);
-    private proxyServers: { [key in string]: Server } = {};
+    private proxyServers: { [key in string]: ProxyServer } = {};
     private prefixServers: string[] = [];
     private hasDefaultServer: boolean = false;
 
@@ -79,46 +79,37 @@ export class ProxyService implements OnModuleInit {
      * @param {ApiServiceDetail} apiService API Service Detail
      */
     private createProxyServer(apiService: ApiServiceDetail): void {
-        this.proxyServers[apiService.prefix] = createProxyServer({
-            target: apiService.host,
-            ws: true
+        this.proxyServers[apiService.prefix] = new ProxyServer({
+            host: apiService.host,
+            enableWs: true,
+            pool: this.apiGatewayOption.pool,
+            errorHandler: this.handleProxyError.bind(this),
+            responseHandler: (proxyRes, req) => this.handleProxyResponse(apiService, proxyRes, req),
+            rewritePath: (request) => this.rewritePath(request, apiService.prefix)
         });
-        this.proxyServers[apiService.prefix].on('proxyReq', (proxyReq, req: Request, res: Response) => {
-            this.rewritePath(proxyReq, apiService.prefix);
-            const contentType: string = req.headers['content-type'];
-            if (contentType && contentType.startsWith('multipart/form-data;')) {
-                return;
-            }
-            if (req.headers[STRIPE_SIGNATURE]) {
-                if (req.body) {
-                    const bodyData = (req as NodeJS.Dict<any>).rawBody;
-                    proxyReq.setHeader('Content-Type', 'application/x-www-form-urlencoded');
-                    proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-                    proxyReq.write(bodyData);
-                }
-                return;
-            }
+    }
 
-            if (req.body) {
-                const bodyData = JSON.stringify(req.body);
-                proxyReq.setHeader('Content-Type', 'application/json');
-                proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-                proxyReq.write(bodyData);
-            }
-        });
-        this.proxyServers[apiService.prefix].on('proxyRes', (proxyRes, req: Request, res: Response) => {
-            if (proxyRes.statusCode >= 300 && proxyRes.statusCode < 400 && !isReqUrlInWhitelist(req.url)) {
-                proxyRes.headers.location = '/' + apiService.prefix + proxyRes.headers.location;
-            }
-        });
-        this.proxyServers[apiService.prefix].on('error', (error, req, res: ServerResponse) => {
-            const errorResponse = {
-                message: 'Service unavailable.'
-            };
-            // eslint-disable-next-line @typescript-eslint/naming-convention
-            res.writeHead(HttpStatus.SERVICE_UNAVAILABLE, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(errorResponse));
-        });
+    handleProxyResponse(apiService: ApiServiceDetail, proxyRes: ResponseData, req: Request): void {
+        if (
+            proxyRes.statusCode >= 300 &&
+            proxyRes.statusCode < 400 &&
+            !isReqUrlInWhitelist(req.url, this.apiGatewayOption.bypassRoutePrefixes || [])
+        ) {
+            proxyRes.headers.location = '/' + apiService.prefix + proxyRes.headers.location;
+        }
+    }
+
+    handleProxyError(error: Error, req: Request, res: Response): void {
+        if (res.writableEnded) {
+            this.logger.error(`Error: ${error.message}`);
+            return;
+        }
+        const errorResponse = {
+            message: 'Service unavailable.'
+        };
+        // eslint-disable-next-line @typescript-eslint/naming-convention
+        res.writeHead(HttpStatus.SERVICE_UNAVAILABLE, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(errorResponse));
     }
 
     /**
@@ -126,13 +117,13 @@ export class ProxyService implements OnModuleInit {
      * @param {ClientRequest} request A request
      * @param {string} prefix A prefix
      */
-    private rewritePath(request: ClientRequest, prefix: string): void {
+    private rewritePath(request: Request, prefix: string): string {
         const newPath = this.removePath(prefix, request.path);
         const url = new URL(newPath, 'http://dummy-base.local');
-        if (!url.pathname.endsWith('/')) {
+        if (!url.pathname.endsWith('/') && !this.requestService.isStaticRequest(request)) {
             url.pathname += '/';
         }
-        request.path = url.pathname + url.search;
+        return url.pathname + url.search;
     }
 
     /**
@@ -164,9 +155,9 @@ export class ProxyService implements OnModuleInit {
      * @param {Response} response A response
      * @param {Request} request A request
      */
-    private handleStaticRequest(response: Response, request: Request): void {
+    private async handleStaticRequest(response: Response, request: Request): Promise<void> {
         const serverName = this.getServerName(request.url);
-        this.proxyServers[serverName].web(request, response);
+        await this.proxyServers[serverName].forwardRequest(request, response);
     }
 
     /**
@@ -181,7 +172,7 @@ export class ProxyService implements OnModuleInit {
         if (!(await this.wsRequestService.handle(request, proxyRequest))) {
             throw new ForbiddenException();
         }
-        await this.proxyServers[serverName].ws(request, socket, {
+        await this.proxyServers[serverName].forwardWebsocket(request, socket, {
             headers: proxyRequest.getKebabHeaders()
         });
     }
@@ -196,16 +187,17 @@ export class ProxyService implements OnModuleInit {
      */
     private async handleHttpRequest(request: Request, response: Response): Promise<void> {
         const serverName = this.getServerName(request.url);
+        const byPassRoutePrefixes = this.apiGatewayOption.bypassRoutePrefixes || [];
+        if (byPassRoutePrefixes.some((prefix) => request.url.startsWith(`${prefix}`))) {
+            await this.proxyServers[serverName].forwardRequest(request, response);
+            return;
+        }
+
         const routerDetail = this.swaggerService.getRouterDetail(
             serverName,
             request.method,
             this.removePath(serverName, request.url)
         );
-
-        if (request.url.startsWith('/oidc/')) {
-            this.proxyServers[serverName].web(request, response);
-            return;
-        }
 
         if (!routerDetail) {
             throw new MethodNotAllowedException();
@@ -216,7 +208,7 @@ export class ProxyService implements OnModuleInit {
         if (!(await this.requestService.handle(routerDetail, request, proxyRequest))) {
             throw new ForbiddenException();
         }
-        await this.proxyServers[serverName].web(request, response, {
+        await this.proxyServers[serverName].forwardRequest(request, response, {
             headers: proxyRequest.getKebabHeaders()
         });
 
