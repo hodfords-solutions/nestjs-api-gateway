@@ -22,10 +22,10 @@ import { env } from '~config/env.config';
                 isEnable: true,
                 globalRateLimitTTL: 60
             },
-            swaggerOptions: {
+            scalarOptions: {
                 showExtensions: true
             },
-            restful: { isEnableDocument: true },
+            restful: { isEnableDocument: true, hideDocumentIds: ['AppController_getHello', 'AppController_getHealth'] },
             redis: {
                 host: env.REDIS.HOST,
                 port: env.REDIS.PORT,

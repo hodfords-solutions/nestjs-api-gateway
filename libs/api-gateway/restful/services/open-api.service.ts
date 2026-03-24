@@ -141,15 +141,16 @@ export class OpenApiService {
         let defaultDoc: string = '';
         for (const server in this.apiDocs) {
             details.push({
-                title: this.apiDocs[server].title,
-                name: server
+                title: server,
+                slug: server,
+                url: 'document-json?type=' + server
             });
             defaultDoc = server;
         }
         return {
             details: JSON.stringify(details),
             defaultDoc,
-            swaggerOptions: JSON.stringify(this.apiGatewayOption.swaggerOptions || {})
+            scalarOptions: JSON.stringify(this.apiGatewayOption.scalarOptions || {})
         };
     }
 
@@ -167,6 +168,12 @@ export class OpenApiService {
         this.removeHeader(document);
         for (const path in document.paths) {
             for (const method in document.paths[path]) {
+                if (
+                    this.apiGatewayOption.restful?.hideDocumentIds?.includes(document.paths[path][method].operationId)
+                ) {
+                    delete document.paths[path];
+                    continue;
+                }
                 const securities = document.paths[path][method].security || [];
                 for (const securityKey of this.apiGatewayOption.openApiSecurityKeys) {
                     this.changeSecurityOfPath(securities, securityKey, 'bearer');

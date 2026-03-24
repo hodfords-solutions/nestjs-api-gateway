@@ -1,54 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
+    <title>API Reference</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
-        name="description"
-        content="SwaggerUI"
-    />
-    <title>SwaggerUI</title>
-    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui.css" />
-    <link href="
-https://cdn.jsdelivr.net/npm/swagger-ui-themes@3.0.1/themes/3.x/theme-feeling-blue.min.css
-" rel="stylesheet">
-    <style>
-        body {
-            padding: 0;
-            margin: 0;
-        }
-    </style>
+            name="viewport"
+            content="width=device-width, initial-scale=1" />
+    <link rel="icon" href="data:,">
 </head>
 <body>
-<div id="swagger-ui"></div>
-<script src="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui-bundle.js" crossorigin></script>
-<script src="https://unpkg.com/swagger-ui-dist@5.7.2/swagger-ui-standalone-preset.js" crossorigin></script>
+<div id="app"></div>
+<!-- Load the Script -->
+<script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+<!-- Initialize the API Reference -->
 <script>
     const apiDocs = JSON.parse(`{{{ details }}}`);
-    const swaggerOptions = JSON.parse(`{{{ swaggerOptions }}}`);
+    const scalarOptions = JSON.parse(`{{{ scalarOptions }}}`);
     const queryString = window.location.search;
     const urlParams = new URLSearchParams(queryString);
     let type = urlParams.get('type') || '{{ defaultDoc }}';
     if (!apiDocs.some((doc) => doc.name === type)){
         type = '{{ defaultDoc }}'
     }
-    window.onload = () => {
-        window.ui = SwaggerUIBundle({
-            urls: apiDocs.map((doc) => ({
-                name: doc.name,
-                url: 'document-json?type=' + doc.name
-            })),
-            queryConfigEnabled: true,
-            'urls.primaryName': 'sample2',
-            dom_id: '#swagger-ui',
-            presets: [
-                SwaggerUIBundle.presets.apis,
-                SwaggerUIStandalonePreset
-            ],
-            layout: "StandaloneLayout",
-            ...swaggerOptions
-        });
-    };
+    Scalar.createApiReference('#app', {
+        sources: apiDocs,
+        layout: 'modern',
+        defaultOpenAllTags: true,
+        showOperationId: true,
+        hideClientButton: true,
+        showSidebar: true,
+        showDeveloperTools: 'never',
+        showToolbar: 'never',
+        operationTitleSource: 'summary',
+        theme: 'default',
+        persistAuth: true,
+        telemetry: true,
+        isEditable: false,
+        isLoading: false,
+        hideModels: false,
+        documentDownloadType: 'none',
+        hideTestRequestButton: false,
+        hideSearch: false,
+        hideDarkModeToggle: false,
+        withDefaultFonts: true,
+        defaultOpenFirstTag: true,
+        expandAllModelSections: false,
+        expandAllResponses: false,
+        orderSchemaPropertiesBy: 'alpha',
+        orderRequiredPropertiesFirst: true,
+        _integration: 'nestjs',
+        default: false,
+        agent: {
+            disabled: true
+        },
+        mcp: {
+            disabled: true
+        },
+        ...scalarOptions
+    })
 </script>
 </body>
 </html>

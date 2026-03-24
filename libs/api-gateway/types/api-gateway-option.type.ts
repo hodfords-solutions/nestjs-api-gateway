@@ -13,7 +13,7 @@ export type ApiGatewayOption = {
     restful: RestfulOption;
     libraryPath?: string;
     redis: RedisOptionType;
-    swaggerOptions?: any;
+    scalarOptions?: any;
     pool: Pool.Options;
     bypassRoutePrefixes?: string[];
 };

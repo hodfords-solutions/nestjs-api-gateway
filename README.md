@@ -45,7 +45,7 @@ Import the `ApiGatewayModule` and use the `forRoot` method to configure the API 
             openApiSecurityKeys: ['auth-user-id'],
             openApiSecurityApiKeys: ['x-api-key'],
             excludeHeaders: ['auth-user-id'],
-            swaggerOptions: {
+            scalarOptions: {
                 showExtensions: false,
             },
             throttler: {
