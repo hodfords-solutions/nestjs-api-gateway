@@ -16,7 +16,8 @@ export class RestfulModule {
             module: RestfulModule,
             imports: [HttpModule],
             controllers: [...(option.isEnableDocument ? [DocumentController] : []), ProxyController],
-            providers: [ProxyService, OpenApiService, RequestService, WsRequestService, UpdateApiDocumentTask]
+            providers: [ProxyService, OpenApiService, RequestService, WsRequestService, UpdateApiDocumentTask],
+            exports: [OpenApiService]
         };
     }
 }

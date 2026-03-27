@@ -39,7 +39,8 @@ export class ApiGatewayModule {
                     provide: API_GATEWAY_OPTION,
                     useValue: option
                 },
-                redisProvider
+                redisProvider,
+                RestfulModule
             ]
         };
     }
