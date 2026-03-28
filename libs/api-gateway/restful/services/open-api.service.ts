@@ -16,6 +16,7 @@ import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 export class OpenApiService {
     private logger = new Logger(OpenApiService.name);
     public apiDocs: { [key in string]: EndpointDetail } = {};
+    public originDocs: { [key in string]: any } = {};
 
     constructor(
         private httpService: HttpService,
@@ -30,6 +31,7 @@ export class OpenApiService {
             return;
         }
 
+        this.originDocs[apiService.prefix] = response.data;
         this.apiDocs[apiService.prefix] = this.getEndpointDetail(apiService.docUrl, response.data);
     }
 
