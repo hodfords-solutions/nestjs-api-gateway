@@ -34,6 +34,9 @@ import { env } from '~config/env.config';
             pool: {
                 connections: 100,
                 pipelining: 1
+            },
+            mcp: {
+                enabled: true
             }
         })
     ],

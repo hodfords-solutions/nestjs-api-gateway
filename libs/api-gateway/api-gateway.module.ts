@@ -1,6 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { ThrottlerModule } from './throttlers/throttler.module';
 import { RestfulModule } from './restful/restful.module';
+import { McpModule } from './mcp/mcp.module';
 import { ApiGatewayOption } from './types/api-gateway-option.type';
 import { API_GATEWAY_OPTION } from './constants/api-gateway.constant';
 import { REDIS_OPTION } from './redis/constants/redis.constant';
@@ -25,7 +26,11 @@ export class ApiGatewayModule {
         return {
             global: true,
             module: ApiGatewayModule,
-            imports: [ThrottlerModule.forRoot(option.throttler), RestfulModule.forRoot(option.restful)],
+            imports: [
+                ThrottlerModule.forRoot(option.throttler),
+                ...(option.mcp?.enabled ? [McpModule.forRoot(option.mcp)] : []),
+                RestfulModule.forRoot(option.restful)
+            ],
             controllers: [],
             providers: [
                 {

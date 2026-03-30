@@ -13,11 +13,12 @@ import { RestfulOption } from './types/restful-option.type';
 export class RestfulModule {
     static forRoot(option: RestfulOption): DynamicModule {
         return {
+            global: true,
             module: RestfulModule,
             imports: [HttpModule],
             controllers: [...(option.isEnableDocument ? [DocumentController] : []), ProxyController],
             providers: [ProxyService, OpenApiService, RequestService, WsRequestService, UpdateApiDocumentTask],
-            exports: [OpenApiService]
+            exports: [OpenApiService, RequestService]
         };
     }
 }
