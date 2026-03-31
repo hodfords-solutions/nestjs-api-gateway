@@ -6,14 +6,71 @@ on:
 jobs:
   lint:
     uses: hodfords-solutions/actions/.github/workflows/lint.yaml@main
-  build:
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      api-gateway: ${{ steps.changes.outputs.api-gateway }}
+      client: ${{ steps.changes.outputs.client }}
+      opentelemetry: ${{ steps.changes.outputs.opentelemetry }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: changes
+        run: |
+          BASE_SHA=${{ github.event.before }}
+          HEAD_SHA=${{ github.sha }}
+          changed_files=$(git diff --name-only $BASE_SHA $HEAD_SHA)
+
+          if echo "$changed_files" | grep -qE '^(libs/api-gateway/|src/)'; then
+            echo "api-gateway=true" >> $GITHUB_OUTPUT
+          else
+            echo "api-gateway=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$changed_files" | grep -qE '^libs/client/'; then
+            echo "client=true" >> $GITHUB_OUTPUT
+          else
+            echo "client=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$changed_files" | grep -qE '^libs/opentelemetry/'; then
+            echo "opentelemetry=true" >> $GITHUB_OUTPUT
+          else
+            echo "opentelemetry=false" >> $GITHUB_OUTPUT
+          fi
+
+  build-api-gateway:
+    needs: [lint, detect-changes]
+    if: needs.detect-changes.outputs.api-gateway == 'true'
     uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
     with:
-      build_path: dist/libs/api-gateway;dist/libs/client;dist/libs/opentelemetry
+      build_path: dist/libs/api-gateway
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  build-client:
+    needs: [lint, detect-changes]
+    if: needs.detect-changes.outputs.client == 'true'
+    uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
+    with:
+      build_path: dist/libs/client
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  build-opentelemetry:
+    needs: [lint, detect-changes]
+    if: needs.detect-changes.outputs.opentelemetry == 'true'
+    uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
+    with:
+      build_path: dist/libs/opentelemetry
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
   update-docs:
     uses: hodfords-solutions/actions/.github/workflows/update-doc.yaml@main
-    needs: build
+    needs: [build-api-gateway, build-client, build-opentelemetry]
+    if: always() && (needs.build-api-gateway.result == 'success' || needs.build-client.result == 'success' || needs.build-opentelemetry.result == 'success')
     secrets:
       DOC_SSH_PRIVATE_KEY: ${{ secrets.DOC_SSH_PRIVATE_KEY }}

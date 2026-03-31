@@ -139,27 +139,32 @@ export class McpToolRegistryService {
         return schema;
     }
 
-    private resolveSchema(originDoc: any, schema: any): any {
+    private resolveSchema(originDoc: any, schema: any, resolvedRefs = new Set<string>()): any {
         if (schema.$ref) {
+            if (resolvedRefs.has(schema.$ref)) {
+                return {};
+            }
+            resolvedRefs.add(schema.$ref);
+
             const refPath = schema.$ref.replace('#/', '').split('/');
             let resolved = originDoc;
             for (const segment of refPath) {
                 resolved = resolved?.[segment];
             }
-            return resolved ? this.resolveSchema(originDoc, resolved) : {};
+            return resolved ? this.resolveSchema(originDoc, resolved, resolvedRefs) : {};
         }
 
         if (schema.properties) {
             const resolved: any = { ...schema };
             resolved.properties = {};
             for (const key in schema.properties) {
-                resolved.properties[key] = this.resolveSchema(originDoc, schema.properties[key]);
+                resolved.properties[key] = this.resolveSchema(originDoc, schema.properties[key], resolvedRefs);
             }
             return resolved;
         }
 
         if (schema.items) {
-            return { ...schema, items: this.resolveSchema(originDoc, schema.items) };
+            return { ...schema, items: this.resolveSchema(originDoc, schema.items, resolvedRefs) };
         }
 
         return schema;
