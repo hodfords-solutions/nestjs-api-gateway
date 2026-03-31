@@ -5,3 +5,5 @@ export * from './services/mcp-tool-registry.service';
 export * from './services/mcp-server.service';
 export * from './services/mcp-tool-executor.service';
 export * from './constants/mcp.constant';
+export * from './decorators/mcp-authentication-middleware.decorator';
+export * from './interfaces/mcp-authentication-middleware.interface';

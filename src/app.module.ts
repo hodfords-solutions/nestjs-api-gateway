@@ -6,6 +6,7 @@ import { redisConfig } from '~config/redis.config';
 import { AuthenticationMiddleware } from '~middleware/authentication.middleware';
 import { StaticRequestMiddleware } from '~middleware/static-request.middleware';
 import { WsAuthenticationMiddleware } from '~middleware/ws-authentication.middleware';
+import { McpAuthenticationMiddlewareImpl } from '~middleware/mcp-authentication.middleware';
 import { env } from '~config/env.config';
 
 @Module({
@@ -41,6 +42,11 @@ import { env } from '~config/env.config';
         })
     ],
     controllers: [AppController],
-    providers: [AuthenticationMiddleware, StaticRequestMiddleware, WsAuthenticationMiddleware]
+    providers: [
+        AuthenticationMiddleware,
+        StaticRequestMiddleware,
+        WsAuthenticationMiddleware,
+        McpAuthenticationMiddlewareImpl
+    ]
 })
 export class AppModule {}

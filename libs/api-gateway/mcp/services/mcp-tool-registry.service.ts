@@ -26,7 +26,7 @@ export class McpToolRegistryService {
         return this.tools.find((tool) => tool.name === name);
     }
 
-    @Cron(CronExpression.EVERY_10_SECONDS)
+    @Cron(CronExpression.EVERY_5_MINUTES)
     refreshTools(): void {
         const newTools: McpToolDefinition[] = [];
 
@@ -45,6 +45,10 @@ export class McpToolRegistryService {
                         routerDetail.operationId &&
                         !this.mcpOption.allowedOperations.includes(routerDetail.operationId)
                     ) {
+                        continue;
+                    }
+
+                    if (this.mcpOption.filter && !this.mcpOption.filter(serviceName, routerDetail)) {
                         continue;
                     }
 
