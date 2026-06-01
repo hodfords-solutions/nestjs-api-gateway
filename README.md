@@ -49,9 +49,11 @@ Import the `ApiGatewayModule` and use the `forRoot` method to configure the API 
                 showExtensions: false,
             },
             throttler: {
-                globalRateLimit: 60,
-                isEnable: true,
-                globalRateLimitTTL: 60
+                globalIpRateLimit: 120,
+                globalIpRateLimitTTL: 60,
+                globalCustomRateLimit: 60,
+                globalCustomRateLimitTTL: 60,
+                isEnable: true
             }
         })
     ],
@@ -128,6 +130,49 @@ index(): string {
     return 'Hello word'
 }
 ```
+
+#### Global rate limits
+The throttler enforces two independent global limits on every request:
+
+- **`globalIpRateLimit` / `globalIpRateLimitTTL`** — always bucketed by `request.ip`. This is a DDoS / abuse baseline that does **not** go through `keyResolver` and is **not** skipped when the resolver returns an empty value.
+- **`globalCustomRateLimit` / `globalCustomRateLimitTTL`** — bucketed by whatever `keyResolver` returns (or `request.ip` if no resolver is configured). Skipped entirely when the resolver returns an empty value.
+
+A request is rejected as soon as either limit is exceeded.
+
+#### Custom rate-limit key
+By default the custom limit buckets requests by `request.ip`. To bucket by something else (authenticated user id, tenant id, API key, etc.), supply a `keyResolver` callback in the throttler options. The callback receives `{ request, routerDetail }` and returns the string to use as the bucket identity.
+
+```typescript
+ApiGatewayModule.forRoot({
+    // ... other options ...
+    throttler: {
+        globalIpRateLimit: 120,
+        globalIpRateLimitTTL: 60,
+        globalCustomRateLimit: 60,
+        globalCustomRateLimitTTL: 60,
+        isEnable: true,
+        keyResolver: ({ request }) => {
+            const userId = request.headers['auth-user-id'];
+            return typeof userId === 'string' && userId.length > 0
+                ? `user:${userId}`
+                : `ip:${request.ip}`;
+        }
+    }
+})
+```
+
+**Skip the custom limit for selected requests** by returning an empty value (`null`, `undefined`, `''`, or a whitespace-only string). The throttler then bypasses both the custom global limit and any per-endpoint `@ApiRateLimit` rules without incrementing their counters. The IP-based global limit still applies.
+
+```typescript
+keyResolver: ({ request, routerDetail }) => {
+    if (request.url === '/healthz') return null;                                  // skip health checks
+    if (routerDetail.operationId === 'InternalProbeController_ping') return null; // skip by operation id
+    const userId = request.headers['auth-user-id'];
+    return typeof userId === 'string' && userId.length > 0 ? `user:${userId}` : `ip:${request.ip}`;
+}
+```
+
+The same identity is used for the custom global limit and for any per-endpoint `@ApiRateLimit` rule. Resolvers may be asynchronous. If the resolver throws, the error propagates through the gateway's existing exception pipeline (no silent allow, no silent deny). If `keyResolver` is omitted, the custom limit falls back to `request.ip` (matching the IP limit's bucketing key). See `specs/002-throttler-key-callback/quickstart.md` for the full walkthrough.
 
 ## Support:
 

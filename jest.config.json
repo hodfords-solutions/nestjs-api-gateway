@@ -8,6 +8,8 @@
     "^~(.*)$": "<rootDir>/src/$1"
   },
   "testRegex": ".*\\.(spec|e2e-spec|test)\\.ts$",
+  "testPathIgnorePatterns": ["/node_modules/", "/dist/"],
+  "modulePathIgnorePatterns": ["/dist/"],
   "transform": {
     "^.+\\.(t|j)s$": "@swc/jest"
   },

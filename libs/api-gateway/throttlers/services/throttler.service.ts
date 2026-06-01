@@ -9,6 +9,18 @@ import { TooManyRequestException } from '../exceptions/too-many-request.exceptio
 import { ThrottlerOption } from '../types/throttler-option.type';
 import { REDIS_OPTION } from '../../redis/constants/redis.constant';
 
+const resolvedIdentityKey = Symbol('throttler.resolvedIdentity');
+const skipThrottle = Symbol('throttler.skip');
+
+type ResolvedIdentity = string | typeof skipThrottle;
+
+function isEmptyKey(value: unknown): boolean {
+    if (value === null || value === undefined) {
+        return true;
+    }
+    return typeof value === 'string' && value.trim() === '';
+}
+
 @Injectable()
 export class ThrottlerService implements OnModuleInit {
     private luaSha: string;
@@ -18,9 +30,6 @@ export class ThrottlerService implements OnModuleInit {
         @Inject(REDIS_OPTION) private readonly redis: Redis
     ) {}
 
-    /**
-     * Handle the loading of a Lua script into Redis and ensures it gets loaded when Redis is ready
-     */
     async onModuleInit(): Promise<any> {
         await this.loadLuaScript();
         this.redis.on('ready', async () => {
@@ -28,71 +37,69 @@ export class ThrottlerService implements OnModuleInit {
         });
     }
 
-    /**
-     * Load the script LUA_INCREASE_AND_GET_SCRIPT into Redis and store its SHA-1 hash for future use
-     */
     async loadLuaScript(): Promise<void> {
         this.luaSha = (await this.redis.script('LOAD', LUA_INCREASE_AND_GET_SCRIPT)) as string;
     }
 
-    /**
-     * Execute the script LUA_INCREASE_AND_GET_SCRIPT in Redis using the SHA-1 hash of the script,
-     * incrementing a counter of a key and managing its expiration time
-     * @param {string} key The key saved in Redis contain a user's IP
-     * @param {number} times The rate limit
-     * @param {number} ttl The TTL of rate limit
-     * @returns {number} Expired Time of the key
-     */
     async getExpireAndIncreaseLimit(key: string, times: number, ttl: number): Promise<number> {
         return this.redis.evalsha(this.luaSha, 1, key, String(times), String(Math.floor(ttl * 1000))) as any;
     }
 
-    /**
-     * Enforce rate limits on incoming requests by first applying global limits
-     * and then applying specific limits based on the router's configuration
-     * @param {RouterDetail} routerDetail Detail of a router
-     * @param {Request} request Incoming request
-     */
     async checkLimitOfRequest(routerDetail: RouterDetail, request: Request): Promise<void> {
         if (!this.option.isEnable) {
             return;
         }
-        await this.checkGlobalRequest(request);
+
+        const identity = await this.resolveIdentity(routerDetail, request);
+        (request as any)[resolvedIdentityKey] = identity;
+
+        if (identity === skipThrottle) {
+            return;
+        }
+
+        await this.checkGlobalCustomRequest(identity);
 
         if (routerDetail?.rateLimits?.length) {
             for (const rateLimit of routerDetail.rateLimits) {
-                await this.checkRouterRequest(routerDetail, request, rateLimit);
+                await this.checkRouterRequest(routerDetail, request, rateLimit, identity);
             }
         }
     }
 
-    /**
-     * Enforce global rate limiting on incoming requests,
-     * checks if the request exceeds a global rate limit.
-     * @param {Request} request Incoming request
-     */
-    async checkGlobalRequest(request: Request): Promise<void> {
-        const key = this.getGlobalKey(request);
+    async checkGlobalIpRequest(ip: string): Promise<void> {
+        if (!this.option.isEnable) {
+            return;
+        }
+        const key = this.getGlobalIpKey(ip);
         const expire = await this.getExpireAndIncreaseLimit(
             key,
-            this.option.globalRateLimit,
-            this.option.globalRateLimitTTL
+            this.option.globalIpRateLimit,
+            this.option.globalIpRateLimitTTL
         );
         if (expire > 0) {
             throw new TooManyRequestException();
         }
     }
 
-    /**
-     * Handle rate limiting for specific routers or endpoints,
-     * checks if a request exceeds the configured rate limit for a particular router
-     * and throws an exception if the rate limit is exceeded.
-     * @param {RouterDetail} routerDetail Detail of a router
-     * @param {Request} request Incoming request
-     * @param {RateLimit} rateLimit Configured Rate Limit of a request
-     */
-    async checkRouterRequest(routerDetail: RouterDetail, request: Request, rateLimit: RateLimit): Promise<void> {
-        const key = this.getRouterKey(routerDetail, request);
+    async checkGlobalCustomRequest(identity: string): Promise<void> {
+        const key = this.getGlobalCustomKey(identity);
+        const expire = await this.getExpireAndIncreaseLimit(
+            key,
+            this.option.globalCustomRateLimit,
+            this.option.globalCustomRateLimitTTL
+        );
+        if (expire > 0) {
+            throw new TooManyRequestException();
+        }
+    }
+
+    async checkRouterRequest(
+        routerDetail: RouterDetail,
+        request: Request,
+        rateLimit: RateLimit,
+        identity: string
+    ): Promise<void> {
+        const key = this.getRouterKey(routerDetail, request, identity);
 
         let isAllowRequest: boolean;
         if (!rateLimit.status) {
@@ -100,7 +107,6 @@ export class ThrottlerService implements OnModuleInit {
             isAllowRequest = expire === 0;
         } else {
             const countRequest = Number(await this.redis.get(key)) || 0;
-
             isAllowRequest = countRequest < rateLimit.limit;
         }
 
@@ -111,27 +117,21 @@ export class ThrottlerService implements OnModuleInit {
         }
     }
 
-    /**
-     * Increase/update the rate limit counter for a specific router based on the response status code of the request,
-     * ensures that only the rate limits associated with the actual response status code are updated
-     * @param {RouterDetail} routerDetail Detail of a router
-     * @param {Request} request Incoming request
-     * @param {Response} response A response
-     */
     async increaseRouterLimit(routerDetail: RouterDetail, request: Request, response: Response): Promise<void> {
+        const identity = (request as any)[resolvedIdentityKey] as ResolvedIdentity | undefined;
+        if (identity === skipThrottle) {
+            return;
+        }
+        const effectiveIdentity = identity ?? request.ip;
+
         for (const rateLimit of routerDetail.rateLimits) {
             if (rateLimit.status === response.statusCode) {
-                const key = this.getRouterKey(routerDetail, request);
+                const key = this.getRouterKey(routerDetail, request, effectiveIdentity);
                 await this.getExpireAndIncreaseLimit(key, rateLimit.limit, rateLimit.ttl);
             }
         }
     }
 
-    /**
-     * Determine whether a specific router has any custom rate limits configured.
-     * @param {RouterDetail} routerDetail Detail of a router
-     * @returns {boolean} Return whether there is any rate limit configured.
-     */
     checkRouterHasCustomLimit(routerDetail: RouterDetail): boolean {
         if (!routerDetail?.rateLimits?.length) {
             return false;
@@ -139,24 +139,35 @@ export class ThrottlerService implements OnModuleInit {
         return routerDetail.rateLimits.some((rateLimit) => rateLimit.status);
     }
 
-    /**
-     * Generate a unique key for rate limiting based on various attributes of the request and router details.
-     * The generated key is used to track rate limits in a Redis database,
-     * ensures that rate limits are enforced per client IP, HTTP method, and route.
-     * @param {RouterDetail} routerDetail Detail of a router
-     * @param {Request} request Incoming request
-     * @returns {string} Router key which will be saved in Redis
-     */
-    getRouterKey(routerDetail: RouterDetail, request: Request): string {
-        return `${RATE_LIMIT_KEY}-${request.ip}-${request.method}-${routerDetail.routerPath}`;
+    getRouterKey(routerDetail: RouterDetail, request: Request, identity: string): string {
+        return `${RATE_LIMIT_KEY}-${identity}-${request.method}-${routerDetail.routerPath}`;
     }
 
-    /**
-     * Generate a unique key for rate limiting that is based solely on the client's IP address.
-     * @param {Request} request Incoming request
-     * @returns {string} Global key which will be saved in Redis
-     */
-    getGlobalKey(request: Request): string {
-        return `${RATE_LIMIT_KEY}-${request.ip}`;
+    getGlobalIpKey(ip: string): string {
+        return `${RATE_LIMIT_KEY}-ip-${ip}`;
+    }
+
+    getGlobalCustomKey(identity: string): string {
+        return `${RATE_LIMIT_KEY}-custom-${identity}`;
+    }
+
+    private async resolveIdentity(routerDetail: RouterDetail, request: Request): Promise<ResolvedIdentity> {
+        if (!this.option.keyResolver) {
+            return request.ip;
+        }
+
+        const raw = await this.option.keyResolver({ request, routerDetail });
+
+        if (isEmptyKey(raw)) {
+            return skipThrottle;
+        }
+
+        if (typeof raw !== 'string') {
+            throw new Error(
+                `ThrottlerOption.keyResolver must return a string, null, or undefined. Received: ${typeof raw}`
+            );
+        }
+
+        return raw;
     }
 }

@@ -19,9 +19,19 @@ import { env } from '~config/env.config';
             openApiSecurityApiKeys: ['x-api-key'],
             excludeHeaders: ['auth-user-id', 'permission-in-any-guard'],
             throttler: {
-                globalRateLimit: 60,
+                globalIpRateLimit: 60,
+                globalIpRateLimitTTL: 60,
+                globalCustomRateLimit: 60,
+                globalCustomRateLimitTTL: 60,
                 isEnable: true,
-                globalRateLimitTTL: 60
+                keyResolver: ({ request }) => {
+                    if (request.url === '/health') {
+                        return null;
+                    }
+                    const userId = (request as any).authUserId;
+                    console.log(userId);
+                    return typeof userId === 'string' && userId.length > 0 ? `user:${userId}` : `ip:${request.ip}`;
+                }
             },
             scalarOptions: {
                 showExtensions: true

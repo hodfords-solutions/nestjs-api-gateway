@@ -203,20 +203,21 @@ export class ProxyService implements OnModuleInit {
             throw new MethodNotAllowedException();
         }
 
-        await this.throttlerService.checkLimitOfRequest(routerDetail, request);
+        await this.throttlerService.checkGlobalIpRequest(request.ip);
+
         const proxyRequest = new ProxyRequest();
         if (!(await this.requestService.handle(routerDetail, request, proxyRequest))) {
             throw new ForbiddenException();
         }
-        await this.proxyServers[serverName].forwardRequest(request, response, {
-            headers: proxyRequest.getKebabHeaders()
-        });
-
+        await this.throttlerService.checkLimitOfRequest(routerDetail, request);
         if (this.throttlerService.checkRouterHasCustomLimit(routerDetail)) {
             response.on('finish', async () => {
                 await this.throttlerService.increaseRouterLimit(routerDetail, request, response);
             });
         }
+        await this.proxyServers[serverName].forwardRequest(request, response, {
+            headers: proxyRequest.getKebabHeaders()
+        });
     }
 
     /**

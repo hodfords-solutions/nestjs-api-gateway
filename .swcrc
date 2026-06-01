@@ -1,0 +1,26 @@
+{
+    "$schema": "https://swc.rs/schema.json",
+    "jsc": {
+        "parser": {
+            "syntax": "typescript",
+            "decorators": true,
+            "dynamicImport": true
+        },
+        "transform": {
+            "legacyDecorator": true,
+            "decoratorMetadata": true
+        },
+        "target": "es2021",
+        "keepClassNames": true,
+        "baseUrl": ".",
+        "paths": {
+            "~*": ["src/*"],
+            "@hodfords/api-gateway": ["libs/api-gateway"],
+            "@hodfords/api-gateway-client": ["libs/client"],
+            "@hodfords/http-proxy": ["libs/http-proxy"]
+        }
+    },
+    "module": {
+        "type": "commonjs"
+    }
+}

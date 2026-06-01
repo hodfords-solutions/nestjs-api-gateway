@@ -18,6 +18,7 @@
         "src/*"
       ],
       "@hodfords/api-gateway": ["libs/api-gateway"],
+      "@hodfords/api-gateway-client": ["libs/client"],
       "@hodfords/http-proxy": ["libs/http-proxy"]
     },
     "skipLibCheck": true

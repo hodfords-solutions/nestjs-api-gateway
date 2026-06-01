@@ -3,6 +3,7 @@ import { AppModule } from '~app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { env } from '~config/env.config';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 /**
  * Initialize and configures a NestJS application,
@@ -17,6 +18,15 @@ async function bootstrap(): Promise<void> {
     app.setViewEngine('hbs');
 
     app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);
+
+    const swaggerConfig = new DocumentBuilder()
+        .setTitle('API Gateway')
+        .setDescription('Sample API Gateway endpoints')
+        .setVersion('1.0')
+        .addApiKey({ type: 'apiKey', name: 'x-api-key', in: 'header' }, 'x-api-key')
+        .build();
+    const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('swagger', app, swaggerDocument);
 
     await app.listen(env.APP_PORT);
 }

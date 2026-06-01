@@ -4,8 +4,8 @@ import { RouterDetail, ProxyMiddlewareHandler, ProxyMiddleware, ProxyRequest } f
 @ProxyMiddleware()
 export class AuthenticationMiddleware implements ProxyMiddlewareHandler {
     async handle(routerDetail: RouterDetail, request: IncomingMessage, proxyRequest: ProxyRequest): Promise<boolean> {
-        console.log(routerDetail);
         proxyRequest.addHeaders({ authUserId: '123' });
+        (request as any).authUserId = '123';
         return true;
     }
 }
