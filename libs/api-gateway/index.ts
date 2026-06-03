@@ -1,5 +1,6 @@
 export * from './api-gateway.module';
 export * from './restful/types/router-path.type';
+export * from './restful/types/api-service.type';
 export * from './restful/decorators/proxy-middleware.decorator';
 export * from './restful/decorators/ws-proxy-middleware.decorator';
 export * from './restful/decorators/proxy-validation.decorator';

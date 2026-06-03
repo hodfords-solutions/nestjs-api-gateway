@@ -1,5 +1,3 @@
-import { ApiServiceDetail } from '../types/api-service.type';
-
 /**
  * Validate whether a value is valid URL.
  * @param {any} string Any value.
@@ -45,30 +43,4 @@ export function ttlToHumanReadable(ttl: number): string {
     } else {
         return `the next ${Math.floor(minutes / 60)} hours`;
     }
-}
-
-/**
- * Parse the string of API services separated by ',' into objects contain their prefix, document url, and host.
- * @param {string} apiService Microservices which the gateway invokes and aggregates their results. Each service is separated by ','.
- * @returns {ApiServiceDetail[]} Detail of API Services
- */
-export function parseApiService(apiService: string): ApiServiceDetail[] {
-    if (!apiService) {
-        return [];
-    }
-    return apiService
-        .split(',')
-        .map((doc) => {
-            const api = doc.split('|');
-            if (api.length != 2 || !isValidUrl(api[1])) {
-                throw new Error('API must have format: prefix:url');
-            }
-            const url = new URL(api[1]);
-            return {
-                prefix: api[0],
-                docUrl: api[1],
-                host: url.origin
-            };
-        })
-        .filter((doc) => doc);
 }

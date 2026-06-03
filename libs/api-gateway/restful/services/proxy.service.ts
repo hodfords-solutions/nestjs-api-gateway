@@ -21,6 +21,7 @@ import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 import { ProxyRequest } from '../models/proxy-request.model';
 import { isReqUrlInWhitelist } from '../helpers/whitelist.helper';
+import { matchesPrefixSegment } from '../helpers/prefix.helper';
 import { ProxyServer } from '../../proxy/proxy-server';
 import { Dispatcher } from 'undici';
 import ResponseData = Dispatcher.ResponseData;
@@ -30,6 +31,8 @@ export class ProxyService implements OnModuleInit {
     private logger = new Logger(ProxyService.name);
     private proxyServers: { [key in string]: ProxyServer } = {};
     private prefixServers: string[] = [];
+    private directPrefixServers: string[] = [];
+    private directPrefixOwner: { [key in string]: string } = {};
     private hasDefaultServer: boolean = false;
 
     constructor(
@@ -68,8 +71,34 @@ export class ProxyService implements OnModuleInit {
                     this.logger.error(`Start ${apiService.prefix} failed. ${error.message}`);
                 });
             this.prefixServers.push(apiService.prefix);
+            this.registerDirectPrefixes(apiService);
             this.createProxyServer(apiService);
         }
+    }
+
+    /**
+     * Register a service's direct prefixes against the service's normal prefix.
+     * Direct prefixes are forwarded to the owning service WITHOUT being stripped.
+     * On a cross-service collision the first service in configuration order wins.
+     * @param {ApiServiceDetail} apiService API Service Detail
+     */
+    private registerDirectPrefixes(apiService: ApiServiceDetail): void {
+        for (const directPrefix of apiService.directPrefixes ?? []) {
+            if (this.directPrefixOwner[directPrefix] === undefined) {
+                this.directPrefixOwner[directPrefix] = apiService.prefix;
+                this.directPrefixServers.push(directPrefix);
+            }
+        }
+    }
+
+    /**
+     * Determine whether a request URL belongs to a configured direct prefix
+     * (matched on a whole-path-segment basis).
+     * @param {string} url A URL
+     * @returns {boolean} Whether the URL is a direct-prefix request
+     */
+    private isDirectPrefixRequest(url: string): boolean {
+        return this.directPrefixServers.some((directPrefix) => matchesPrefixSegment(url, directPrefix));
     }
 
     /**
@@ -93,7 +122,8 @@ export class ProxyService implements OnModuleInit {
         if (
             proxyRes.statusCode >= 300 &&
             proxyRes.statusCode < 400 &&
-            !isReqUrlInWhitelist(req.url, this.apiGatewayOption.bypassRoutePrefixes || [])
+            !isReqUrlInWhitelist(req.url, this.apiGatewayOption.bypassRoutePrefixes || []) &&
+            !this.isDirectPrefixRequest(req.url)
         ) {
             proxyRes.headers.location = '/' + apiService.prefix + proxyRes.headers.location;
         }
@@ -127,13 +157,23 @@ export class ProxyService implements OnModuleInit {
     }
 
     /**
-     * Remove the specified prefix from the URL.
+     * Remove the specified prefix from the URL, but only when it is the LEADING path segment.
+     * Direct-prefix requests (whose path does not begin with the service's normal prefix) are
+     * therefore left untouched, preserving their prefix on forward.
      * @param {string} prefix A Prefix
      * @param {string} url A URL
      * @returns {string} The URL is properly cleaned up before being forwarded to a backend service
      */
     private removePath(prefix: string, url: string): string {
-        return url.replace(`/${prefix}`, '') || '/';
+        const base = `/${prefix}`;
+        if (url === base) {
+            return '/';
+        }
+        const next = url.charAt(base.length);
+        if (url.startsWith(base) && (next === '/' || next === '?' || next === '#')) {
+            return url.slice(base.length) || '/';
+        }
+        return url;
     }
 
     /**
@@ -227,9 +267,16 @@ export class ProxyService implements OnModuleInit {
      * @returns {string} Return server's name
      */
     getServerName(url: string): string {
+        // Direct prefixes are evaluated before normal prefixes (FR-006): on overlap the direct
+        // (retain) owner wins. The matched prefix is preserved by removePath (leading-only strip).
+        for (const directPrefix of this.directPrefixServers) {
+            if (matchesPrefixSegment(url, directPrefix)) {
+                return this.directPrefixOwner[directPrefix];
+            }
+        }
         let serverName: string;
         for (const prefix of this.prefixServers) {
-            if (url.startsWith(prefix) || url.startsWith(`/${prefix}`)) {
+            if (matchesPrefixSegment(url, prefix)) {
                 serverName = prefix;
                 break;
             }

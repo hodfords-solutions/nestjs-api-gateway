@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Req } from '@nestjs/common';
 import { OpenApiService } from '@hodfords/api-gateway';
 import { ApiRateLimit } from '@hodfords/api-gateway-client';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -24,5 +24,11 @@ export class AppController {
     @ApiOkResponse({ description: 'Merged OpenAPI document', schema: { type: 'object', additionalProperties: true } })
     document(): any {
         return this.openApiService.apiDocs;
+    }
+
+    @Get('oauth/metadata')
+    @ApiRateLimit(5, 60, 200)
+    oauth(@Req() request): string {
+        return 'Oauth: ' + request.url;
     }
 }
