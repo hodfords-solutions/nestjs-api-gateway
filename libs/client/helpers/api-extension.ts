@@ -1,4 +1,4 @@
-import { DECORATORS } from '@nestjs/swagger/dist/constants';
+import { DECORATORS } from '@nestjs/swagger';
 
 export function addApiExtension(descriptor: PropertyDescriptor, key: string, value: any): PropertyDescriptor {
     const apiExtension = Reflect.getMetadata(DECORATORS.API_EXTENSION, descriptor.value) || {};

@@ -10,6 +10,7 @@ import { ThrottlerOption } from '../types/throttler-option.type';
 import { REDIS_OPTION } from '../../redis/constants/redis.constant';
 
 const resolvedIdentityKey = Symbol('throttler.resolvedIdentity');
+const globalIpCheckedKey = Symbol('throttler.globalIpChecked');
 const skipThrottle = Symbol('throttler.skip');
 
 type ResolvedIdentity = string | typeof skipThrottle;
@@ -50,6 +51,15 @@ export class ThrottlerService implements OnModuleInit {
             return;
         }
 
+        // The global IP ceiling is an always-on safety net keyed by the network address. It applies
+        // before the key resolver and regardless of what the resolver returns (including the
+        // skip-on-empty case), so exempt requests still count against the per-IP DoS limit. Callers
+        // that already ran it earlier in the pipeline (e.g. the proxy, before auth) mark the request
+        // so we don't double-count here; standalone callers (e.g. the MCP path) still get the check.
+        if (!(request as any)[globalIpCheckedKey]) {
+            await this.checkGlobalIpRequest(request);
+        }
+
         const identity = await this.resolveIdentity(routerDetail, request);
         (request as any)[resolvedIdentityKey] = identity;
 
@@ -66,11 +76,13 @@ export class ThrottlerService implements OnModuleInit {
         }
     }
 
-    async checkGlobalIpRequest(ip: string): Promise<void> {
+    async checkGlobalIpRequest(request: Request): Promise<void> {
         if (!this.option.isEnable) {
             return;
         }
-        const key = this.getGlobalIpKey(ip);
+        // Mark the request so a later checkLimitOfRequest call doesn't re-run the IP check.
+        (request as any)[globalIpCheckedKey] = true;
+        const key = this.getGlobalIpKey(request.ip);
         const expire = await this.getExpireAndIncreaseLimit(
             key,
             this.option.globalIpRateLimit,
