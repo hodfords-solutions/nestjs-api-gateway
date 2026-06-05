@@ -1,6 +1,6 @@
 {
     "name": "@hodfords/nestjs-api-gateway-client",
-    "version": "11.0.13",
+    "version": "11.0.14",
     "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
     "author": "",
     "private": false,
@@ -15,7 +15,7 @@
     "homepage": "https://opensource.hodfords.uk/",
     "scripts": {},
     "devDependencies": {
-        "@nestjs/swagger": "11.2.6"
+        "@nestjs/swagger": "11.4.4"
     },
     "peerDependencies": {
         "@nestjs/swagger": "*"
