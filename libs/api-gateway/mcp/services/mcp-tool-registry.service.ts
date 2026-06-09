@@ -1,4 +1,4 @@
-import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OpenApiService } from '../../restful/services/open-api.service';
 import { McpToolDefinition } from '../types/mcp-tool.type';
@@ -8,7 +8,7 @@ import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 
 @Injectable()
-export class McpToolRegistryService implements OnModuleInit {
+export class McpToolRegistryService implements OnApplicationBootstrap {
     private logger = new Logger(McpToolRegistryService.name);
     private tools: McpToolDefinition[] = [];
 
@@ -18,9 +18,10 @@ export class McpToolRegistryService implements OnModuleInit {
         @Inject(API_GATEWAY_OPTION) private apiGatewayOption: ApiGatewayOption
     ) {}
 
-    async onModuleInit(): Promise<void> {
-        // Wait for the initial load of API documents (driven by ProxyService.onModuleInit)
-        // to settle before building the first tool registry.
+    async onApplicationBootstrap(): Promise<void> {
+        // Runs after every module's onModuleInit has completed, so ProxyService has
+        // already kicked off the initial API document load. Wait for that load to
+        // settle before building the first tool registry.
         await this.openApiService.ready;
         this.refreshTools();
     }
