@@ -57,23 +57,30 @@ export class ProxyService implements OnModuleInit {
             }
         });
 
+        const initialLoads: Promise<void>[] = [];
         for (const apiService of this.apiGatewayOption.apiServices) {
             if (apiService.prefix === DEFAULT_SERVER_NAME) {
                 this.hasDefaultServer = true;
             }
-            this.swaggerService
-                .getServiceDetail(apiService)
-                .then(() => {
-                    this.logger.log(`Start ${apiService.prefix} successfully.`);
-                })
-                .catch((error) => {
-                    console.error(error);
-                    this.logger.error(`Start ${apiService.prefix} failed. ${error.message}`);
-                });
+            initialLoads.push(
+                this.swaggerService
+                    .getServiceDetail(apiService)
+                    .then(() => {
+                        this.logger.log(`Start ${apiService.prefix} successfully.`);
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                        this.logger.error(`Start ${apiService.prefix} failed. ${error.message}`);
+                    })
+            );
             this.prefixServers.push(apiService.prefix);
             this.registerDirectPrefixes(apiService);
             this.createProxyServer(apiService);
         }
+
+        // Signal readiness once every service's initial document load has settled,
+        // without blocking the rest of the module initialization.
+        Promise.allSettled(initialLoads).then(() => this.swaggerService.markInitialLoadComplete());
     }
 
     /**

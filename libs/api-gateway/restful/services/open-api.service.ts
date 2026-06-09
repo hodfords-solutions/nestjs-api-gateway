@@ -18,10 +18,26 @@ export class OpenApiService {
     public apiDocs: { [key in string]: EndpointDetail } = {};
     public originDocs: { [key in string]: any } = {};
 
+    /**
+     * Resolves once the initial load of every service's API document has settled,
+     * so consumers can wait for docs to be available before using them.
+     */
+    private markReady!: () => void;
+    public readonly ready: Promise<void> = new Promise<void>((resolve) => {
+        this.markReady = resolve;
+    });
+
     constructor(
         private httpService: HttpService,
         @Inject(API_GATEWAY_OPTION) private apiGatewayOption: ApiGatewayOption
     ) {}
+
+    /**
+     * Signal that the initial load of all API documents has completed.
+     */
+    markInitialLoadComplete(): void {
+        this.markReady();
+    }
 
     async getServiceDetail(apiService: ApiServiceDetail): Promise<void> {
         const response = await firstValueFrom(this.httpService.get(apiService.docUrl));

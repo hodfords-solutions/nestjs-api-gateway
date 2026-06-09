@@ -1,14 +1,14 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OpenApiService } from '../../restful/services/open-api.service';
 import { McpToolDefinition } from '../types/mcp-tool.type';
 import { MCP_OPTION } from '../constants/mcp.constant';
-import { McpOption } from '../types/mcp-option.type';
+import { McpOption, McpParameterFilterContext } from '../types/mcp-option.type';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 
 @Injectable()
-export class McpToolRegistryService {
+export class McpToolRegistryService implements OnModuleInit {
     private logger = new Logger(McpToolRegistryService.name);
     private tools: McpToolDefinition[] = [];
 
@@ -17,6 +17,13 @@ export class McpToolRegistryService {
         @Inject(MCP_OPTION) private mcpOption: McpOption,
         @Inject(API_GATEWAY_OPTION) private apiGatewayOption: ApiGatewayOption
     ) {}
+
+    async onModuleInit(): Promise<void> {
+        // Wait for the initial load of API documents (driven by ProxyService.onModuleInit)
+        // to settle before building the first tool registry.
+        await this.openApiService.ready;
+        this.refreshTools();
+    }
 
     getTools(): McpToolDefinition[] {
         return this.tools;
@@ -58,7 +65,7 @@ export class McpToolRegistryService {
                         routerDetail.operationId,
                         routerDetail.path
                     );
-                    const inputSchema = this.buildInputSchema(originDoc, routerDetail.path, method);
+                    const inputSchema = this.buildInputSchema(originDoc, routerDetail.path, method, serviceName);
 
                     newTools.push({
                         name: toolName,
@@ -88,7 +95,7 @@ export class McpToolRegistryService {
         return `${serviceName}_${method.toUpperCase()}_${sanitizedPath}`;
     }
 
-    private buildInputSchema(originDoc: any, path: string, method: string): Record<string, any> {
+    private buildInputSchema(originDoc: any, path: string, method: string, serviceName: string): Record<string, any> {
         const schema: Record<string, any> = {
             type: 'object',
             properties: {},
@@ -102,19 +109,7 @@ export class McpToolRegistryService {
         const operation = originDoc.paths[path][method];
 
         if (operation.parameters) {
-            for (const param of operation.parameters) {
-                const propName = `${param.in}_${param.name}`;
-                schema.properties[propName] = {
-                    type: param.schema?.type || 'string',
-                    description: param.description || `${param.in} parameter: ${param.name}`
-                };
-                if (param.schema?.enum) {
-                    schema.properties[propName].enum = param.schema.enum;
-                }
-                if (param.required) {
-                    schema.required.push(propName);
-                }
-            }
+            this.applyParameters(schema, operation.parameters, { serviceName, path, method });
         }
 
         if (operation.requestBody?.content) {
@@ -137,6 +132,26 @@ export class McpToolRegistryService {
         }
 
         return schema;
+    }
+
+    private applyParameters(schema: Record<string, any>, parameters: any[], context: McpParameterFilterContext): void {
+        for (const param of parameters) {
+            if (this.mcpOption.parameterFilter && !this.mcpOption.parameterFilter(param, context)) {
+                continue;
+            }
+
+            const propName = `${param.in}_${param.name}`;
+            schema.properties[propName] = {
+                type: param.schema?.type || 'string',
+                description: param.description || `${param.in} parameter: ${param.name}`
+            };
+            if (param.schema?.enum) {
+                schema.properties[propName].enum = param.schema.enum;
+            }
+            if (param.required) {
+                schema.required.push(propName);
+            }
+        }
     }
 
     private resolveSchema(originDoc: any, schema: any, resolvedRefs = new Set<string>()): any {
