@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/comm
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { OpenApiService } from '../../restful/services/open-api.service';
 import { McpToolDefinition } from '../types/mcp-tool.type';
-import { MCP_OPTION } from '../constants/mcp.constant';
+import { MAX_TOOL_NAME_LENGTH, MCP_OPTION } from '../constants/mcp.constant';
 import { McpOption, McpParameterFilterContext } from '../types/mcp-option.type';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
@@ -86,6 +86,22 @@ export class McpToolRegistryService implements OnApplicationBootstrap {
     }
 
     private buildToolName(serviceName: string, method: string, operationId: string, path: string): string {
+        const defaultName = this.buildDefaultToolName(serviceName, method, operationId, path);
+        const toolName = this.mcpOption.toolName
+            ? this.mcpOption.toolName({ serviceName, method, operationId, path, defaultName })
+            : defaultName;
+
+        if (toolName.length > MAX_TOOL_NAME_LENGTH) {
+            this.logger.warn(
+                `MCP tool name "${toolName}" is ${toolName.length} characters, ` +
+                    `which exceeds the recommended maximum of ${MAX_TOOL_NAME_LENGTH}.`
+            );
+        }
+
+        return toolName;
+    }
+
+    private buildDefaultToolName(serviceName: string, method: string, operationId: string, path: string): string {
         if (operationId) {
             return `${serviceName}_${operationId}`;
         }
