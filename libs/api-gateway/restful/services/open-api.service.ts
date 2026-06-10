@@ -17,6 +17,11 @@ export class OpenApiService {
     private logger = new Logger(OpenApiService.name);
     public apiDocs: { [key in string]: EndpointDetail } = {};
     public originDocs: { [key in string]: any } = {};
+    /**
+     * Serialized form of the last successfully loaded document per service, used to skip
+     * re-parsing (and rebuilding every path-to-regexp matcher) when the document is unchanged.
+     */
+    private docSnapshots: { [key in string]: string } = {};
 
     /**
      * Resolves once the initial load of every service's API document has settled,
@@ -46,6 +51,12 @@ export class OpenApiService {
             this.logger.error(response);
             return;
         }
+
+        const snapshot = JSON.stringify(response.data);
+        if (this.docSnapshots[apiService.prefix] === snapshot) {
+            return;
+        }
+        this.docSnapshots[apiService.prefix] = snapshot;
 
         this.originDocs[apiService.prefix] = response.data;
         this.apiDocs[apiService.prefix] = this.getEndpointDetail(apiService.docUrl, response.data);

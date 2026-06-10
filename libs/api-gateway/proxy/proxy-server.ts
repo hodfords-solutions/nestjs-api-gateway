@@ -7,6 +7,17 @@ import { ProxyServerOptions } from './proxy-server-option.type';
 import { Socket } from 'node:net';
 import { ProxySocket } from './proxy-socket';
 
+const hopByHopHeaders = new Set([
+    'connection',
+    'keep-alive',
+    'proxy-authenticate',
+    'proxy-authorization',
+    'te',
+    'trailers',
+    'transfer-encoding',
+    'upgrade'
+]);
+
 export class ProxyServer {
     private pool: Pool;
     constructor(private options: ProxyServerOptions) {
@@ -14,22 +25,12 @@ export class ProxyServer {
     }
 
     removeHopByHopHeader(headers: IncomingHttpHeaders | OutgoingHttpHeaders) {
-        const hopByHopHeaders = [
-            'connection',
-            'keep-alive',
-            'proxy-authenticate',
-            'proxy-authorization',
-            'te',
-            'trailers',
-            'transfer-encoding',
-            'upgrade'
-        ];
         const newHeaders = new Map<string, string | string[]>();
-        Object.entries(headers).forEach(([key, value]) => {
-            if (!hopByHopHeaders.includes(key.toLowerCase())) {
-                newHeaders.set(key, value as string | string[]);
+        for (const key in headers) {
+            if (!hopByHopHeaders.has(key.toLowerCase())) {
+                newHeaders.set(key, headers[key] as string | string[]);
             }
-        });
+        }
 
         return newHeaders;
     }
