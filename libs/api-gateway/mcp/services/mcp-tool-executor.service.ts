@@ -42,6 +42,13 @@ export class McpToolExecutorService {
         }
 
         try {
+            // The gateway runs with body parsing disabled and the MCP SDK consumes the raw
+            // request stream itself, so `request.body` is never populated for `/mcp`. Expose the
+            // tool arguments (e.g. `path_projectId`) on the request so gateway middleware — most
+            // importantly the project-permission check — can resolve path parameters the same way
+            // it does for a normal REST request.
+            (request as any).body = args;
+
             await this.throttlerService.checkLimitOfRequest(tool.routerDetail, request as any);
 
             const proxyRequest = new ProxyRequest();
