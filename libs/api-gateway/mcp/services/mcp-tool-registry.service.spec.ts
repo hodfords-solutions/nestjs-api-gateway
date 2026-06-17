@@ -210,4 +210,74 @@ describe('McpToolRegistryService.resolveSchema', () => {
         const resolved = asInternal(service).resolveSchema({}, { $ref: '#/components/schemas/missing' });
         expect(resolved).toEqual({});
     });
+
+    it('coerces a stringified constructor type to a valid JSON Schema type', () => {
+        const service = createService();
+        const resolved = asInternal(service).resolveSchema(
+            {},
+            {
+                type: 'object',
+                properties: {
+                    name: { type: 'function String() { [native code] }' },
+                    age: { type: 'function Number() { [native code] }' },
+                    active: { type: 'function Boolean() { [native code] }' }
+                }
+            }
+        );
+        expect(resolved.properties.name).toEqual({ type: 'string' });
+        expect(resolved.properties.age).toEqual({ type: 'number' });
+        expect(resolved.properties.active).toEqual({ type: 'boolean' });
+    });
+
+    it('coerces a constructor function type and drops unmappable types', () => {
+        const service = createService();
+        const resolved = asInternal(service).resolveSchema(
+            {},
+            {
+                type: 'object',
+                properties: {
+                    name: { type: String, description: 'a name' },
+                    weird: { type: 'function Whatever() { [native code] }', description: 'unknown' }
+                }
+            }
+        );
+        expect(resolved.properties.name).toEqual({ type: 'string', description: 'a name' });
+        expect(resolved.properties.weird).toEqual({ description: 'unknown' });
+    });
+
+    it('logs a warning when a schema type cannot be mapped', () => {
+        const service = createService();
+        const warn = jest.spyOn((service as never as { logger: { warn: jest.Mock } }).logger, 'warn');
+        asInternal(service).resolveSchema(
+            {},
+            { type: 'object', properties: { weird: { type: 'function Whatever() { [native code] }' } } }
+        );
+        expect(warn).toHaveBeenCalledWith(expect.stringContaining('Dropping unmappable schema type'));
+    });
+});
+
+describe('McpToolRegistryService.buildInputSchema type normalization', () => {
+    it('coerces stringified constructor parameter types to valid JSON Schema types', () => {
+        const originDoc = {
+            paths: {
+                '/users/{id}': {
+                    get: {
+                        parameters: [
+                            {
+                                in: 'path',
+                                name: 'id',
+                                required: true,
+                                schema: { type: 'function String() { [native code] }' }
+                            }
+                        ]
+                    }
+                }
+            }
+        };
+        const service = createService({}, { originDocs: { users: originDoc } });
+        service.refreshTools();
+        const schema = service.getTools()[0].inputSchema;
+
+        expect(schema.properties['path_id']).toEqual({ type: 'string', description: 'path parameter: id' });
+    });
 });

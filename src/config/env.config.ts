@@ -11,8 +11,8 @@ dotenv.config();
 const apiServices: ApiServiceDetail[] = [
     {
         prefix: 'user-service',
-        docUrl: 'http://127.0.0.1:1000/swagger-json',
-        host: new URL('http://127.0.0.1:1000/swagger-json').origin,
+        docUrl: 'http://localhost:4020/documents-json',
+        host: new URL('http://localhost:4020/documents-json').origin,
         directPrefixes: ['oauth', 'oidc']
     }
 ];

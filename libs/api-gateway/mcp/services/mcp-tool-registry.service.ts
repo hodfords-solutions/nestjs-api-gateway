@@ -7,6 +7,8 @@ import { McpOption, McpParameterFilterContext } from '../types/mcp-option.type';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type';
 
+const jsonSchemaTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'];
+
 @Injectable()
 export class McpToolRegistryService implements OnApplicationBootstrap {
     private logger = new Logger(McpToolRegistryService.name);
@@ -158,8 +160,17 @@ export class McpToolRegistryService implements OnApplicationBootstrap {
             }
 
             const propName = `${param.in}_${param.name}`;
+            const paramType = param.schema?.type;
+            const normalizedType = this.normalizeSchemaType(paramType);
+            if (normalizedType === undefined && paramType !== undefined && paramType !== null) {
+                this.logger.warn(
+                    `Unmappable type ${JSON.stringify(this.describeType(paramType))} for parameter ` +
+                        `"${param.in}.${param.name}" (${context.serviceName} ${context.method} ${context.path}); ` +
+                        `defaulting to "string".`
+                );
+            }
             schema.properties[propName] = {
-                type: param.schema?.type || 'string',
+                type: normalizedType || 'string',
                 description: param.description || `${param.in} parameter: ${param.name}`
             };
             if (param.schema?.enum) {
@@ -188,6 +199,7 @@ export class McpToolRegistryService implements OnApplicationBootstrap {
 
         if (schema.properties) {
             const resolved: any = { ...schema };
+            this.normalizeSchemaTypeInPlace(resolved);
             resolved.properties = {};
             for (const key in schema.properties) {
                 resolved.properties[key] = this.resolveSchema(originDoc, schema.properties[key], resolvedRefs);
@@ -196,9 +208,106 @@ export class McpToolRegistryService implements OnApplicationBootstrap {
         }
 
         if (schema.items) {
-            return { ...schema, items: this.resolveSchema(originDoc, schema.items, resolvedRefs) };
+            const resolved = { ...schema, items: this.resolveSchema(originDoc, schema.items, resolvedRefs) };
+            this.normalizeSchemaTypeInPlace(resolved);
+            return resolved;
         }
 
-        return schema;
+        const resolved = { ...schema };
+        this.normalizeSchemaTypeInPlace(resolved);
+        return resolved;
+    }
+
+    /**
+     * Rewrites a schema's own `type` field to a valid JSON Schema type in place.
+     *
+     * Upstream Swagger generators sometimes leak a constructor (`type: String`) or its
+     * stringified form (`"function String() { [native code] }"`) into the served document.
+     * MCP clients reject such schemas, so we coerce them to lowercase JSON Schema types and
+     * drop anything we can't map.
+     */
+    private normalizeSchemaTypeInPlace(schema: any): void {
+        if (!schema || typeof schema !== 'object' || !('type' in schema)) {
+            return;
+        }
+
+        const originalType = schema.type;
+        const normalized = this.normalizeSchemaType(originalType);
+        if (normalized === undefined) {
+            if (originalType !== undefined && originalType !== null) {
+                this.logger.warn(
+                    `Dropping unmappable schema type ${JSON.stringify(this.describeType(originalType))} ` +
+                        `while building MCP input schema.`
+                );
+            }
+            delete schema.type;
+        } else {
+            schema.type = normalized;
+        }
+    }
+
+    /**
+     * Produces a log-friendly description of a schema `type` value. Functions don't survive
+     * `JSON.stringify`, so render them by name to keep the warning useful.
+     */
+    private describeType(type: unknown): string {
+        if (typeof type === 'function') {
+            return `[Function: ${(type as { name?: string }).name || 'anonymous'}]`;
+        }
+        return String(type);
+    }
+
+    private normalizeSchemaType(type: unknown): string | string[] | undefined {
+        if (type === undefined || type === null) {
+            return undefined;
+        }
+
+        // OpenAPI 3.1 allows an array of types — normalize every entry.
+        if (Array.isArray(type)) {
+            const normalized = type
+                .map((entry) => this.normalizeSchemaType(entry))
+                .filter((entry): entry is string => typeof entry === 'string');
+            return normalized.length ? normalized : undefined;
+        }
+
+        // A constructor function leaked in directly, e.g. `type: String`.
+        if (typeof type === 'function') {
+            return this.constructorNameToJsonType((type as { name?: string }).name);
+        }
+
+        if (typeof type === 'string') {
+            // A constructor that was stringified upstream, e.g. "function String() { [native code] }".
+            const functionMatch = type.match(/^\s*(?:async\s+)?function\*?\s+(\w+)/);
+            if (functionMatch) {
+                return this.constructorNameToJsonType(functionMatch[1]);
+            }
+
+            const lower = type.toLowerCase();
+            if (jsonSchemaTypes.includes(lower)) {
+                return lower;
+            }
+        }
+
+        return undefined;
+    }
+
+    private constructorNameToJsonType(name?: string): string | undefined {
+        switch (name) {
+            case 'String':
+                return 'string';
+            case 'Number':
+            case 'BigInt':
+                return 'number';
+            case 'Boolean':
+                return 'boolean';
+            case 'Array':
+                return 'array';
+            case 'Object':
+                return 'object';
+            case 'Date':
+                return 'string';
+            default:
+                return undefined;
+        }
     }
 }
