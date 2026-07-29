@@ -63,6 +63,29 @@ Import the `ApiGatewayModule` and use the `forRoot` method to configure the API 
 export class AppModule {}
 ```
 
+#### Redis connection
+The `redis` option is passed to `ioredis`. Besides `host`, `port` and `db`, it accepts credentials and TLS settings:
+```typescript
+ApiGatewayModule.forRoot({
+    // ...
+    redis: {
+        host: env.REDIS.HOST,
+        port: env.REDIS.PORT,
+        db: env.REDIS.DB,
+        username: env.REDIS.USERNAME, // optional, Redis ACL user
+        password: env.REDIS.PASSWORD, // optional
+        tls: true // or Node's tls.connect options: { ca, cert, key, servername, rejectUnauthorized }
+    }
+})
+```
+Set `tls: true` for a managed Redis with a publicly trusted certificate (`rediss://`). Pass an object when you need a
+custom CA, client certificates, or an explicit SNI name. `rejectUnauthorized: false` disables certificate verification
+and should only be used with self-signed certificates outside production.
+
+In this repository the values are read from the environment (see `.env.example`): `REDIS_USERNAME`, `REDIS_PASSWORD`,
+`REDIS_TLS`, `REDIS_TLS_CA_FILE`, `REDIS_TLS_CERT_FILE`, `REDIS_TLS_KEY_FILE`, `REDIS_TLS_SERVERNAME` and
+`REDIS_TLS_REJECT_UNAUTHORIZED`.
+
 #### Custom Authentication Header
 You can handle the authentication header by creating a custom authentication handler. The `handle` method will be called before the request is processed. The `handle` method accepts the incoming request object and should return a boolean value indicating whether the request is authenticated.
 ```typescript

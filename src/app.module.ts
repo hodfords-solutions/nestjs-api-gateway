@@ -40,7 +40,10 @@ import { env } from '~config/env.config';
             redis: {
                 host: env.REDIS.HOST,
                 port: env.REDIS.PORT,
-                db: env.REDIS.DB
+                db: env.REDIS.DB,
+                username: env.REDIS.USERNAME,
+                password: env.REDIS.PASSWORD,
+                tls: env.REDIS.TLS
             },
             pool: {
                 connections: 100,

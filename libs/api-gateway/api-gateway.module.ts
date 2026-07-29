@@ -18,7 +18,10 @@ export class ApiGatewayModule {
                 return new Redis({
                     host: option.redis?.host,
                     port: option.redis?.port,
-                    db: option.redis?.db
+                    db: option.redis?.db,
+                    username: option.redis?.username,
+                    password: option.redis?.password,
+                    ...(option.redis?.tls ? { tls: option.redis.tls === true ? {} : option.redis.tls } : {})
                 });
             }
         };
