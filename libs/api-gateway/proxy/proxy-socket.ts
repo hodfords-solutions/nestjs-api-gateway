@@ -45,13 +45,10 @@ export class ProxySocket {
         );
     }
 
-    handleWebsocket(extraHeaders: NodeJS.Dict<string> = {}, head?: Buffer) {
-        if (!this.checkMethodAndHeader()) {
-            return this.socket.destroy();
-        }
-        this.clientHead = head;
+    buildRequestOptions(extraHeaders: NodeJS.Dict<string> = {}): http.RequestOptions {
         const url = new URL(this.options.host);
-        const requestOptions: http.RequestOptions = {
+
+        return {
             method: this.req.method,
             host: url.host,
             hostname: url.hostname,
@@ -60,9 +57,23 @@ export class ProxySocket {
                 ...this.req.headers,
                 ...extraHeaders
             },
-            path: this.req.url
+            path: this.req.url,
+            // Never borrow a socket from the keep-alive pool for an upgrade. A pooled
+            // socket arrives with the agent's idle timeout already armed and partly
+            // elapsed, and that timer survives the handover to the upgraded protocol —
+            // the tunnel then dies mid-session once the peers go quiet, which for
+            // Engine.IO is the 25s gap between pings. An upgrade needs a socket the
+            // agent will never reclaim.
+            agent: false
         };
-        const proxyReq = http.request(requestOptions);
+    }
+
+    handleWebsocket(extraHeaders: NodeJS.Dict<string> = {}, head?: Buffer) {
+        if (!this.checkMethodAndHeader()) {
+            return this.socket.destroy();
+        }
+        this.clientHead = head;
+        const proxyReq = http.request(this.buildRequestOptions(extraHeaders));
         this.socket.setTimeout(0);
         this.socket.setNoDelay(true);
         this.socket.setKeepAlive(true, 0);
@@ -93,6 +104,10 @@ export class ProxySocket {
         // Servers that speak first (Engine.IO sends its OPEN packet immediately) lose
         // that first frame otherwise, leaving a connection that looks live but never
         // completes its handshake.
+        // The client socket is cleared the same way in handleWebsocket; do the same
+        // upstream so no inherited idle timer can reclaim the tunnel.
+        proxySocket.setTimeout(0);
+
         if (proxyHead?.length) {
             proxySocket.unshift(proxyHead);
         }
