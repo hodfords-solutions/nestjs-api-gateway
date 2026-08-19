@@ -131,3 +131,52 @@ describe('ProxySocket upgrade head', () => {
         expect(proxySocketInstance['clientHead']).toBe(clientHead);
     });
 });
+
+describe('ProxySocket upstream idle timer', () => {
+    /**
+     * A socket taken from the keep-alive pool carries the agent's idle timeout, already
+     * partly elapsed. That timer outlives the protocol handover, so a quiet tunnel gets
+     * reclaimed mid-session. The upgrade must never use a pooled socket, and the
+     * upstream socket's timeout must be cleared exactly as the client's is.
+     */
+    it('opts out of the keep-alive agent for the upgrade request', () => {
+        const options = createProxySocket({
+            method: 'GET',
+            url: '/socket.io/?EIO=4&transport=websocket',
+            headers: { upgrade: 'websocket' }
+        }).buildRequestOptions();
+
+        expect(options.agent).toBe(false);
+    });
+
+    it('still forwards path, method and merged headers', () => {
+        const options = createProxySocket({
+            method: 'GET',
+            url: '/socket.io/?EIO=4',
+            headers: { upgrade: 'websocket', cookie: 'a=1' }
+        }).buildRequestOptions({ 'auth-user-id': 'u-1' });
+
+        expect(options.path).toBe('/socket.io/?EIO=4');
+        expect(options.method).toBe('GET');
+        expect(options.headers).toMatchObject({ upgrade: 'websocket', cookie: 'a=1', 'auth-user-id': 'u-1' });
+        expect(options.port).toBe('18080');
+    });
+
+    it('clears the inherited idle timeout on the upstream socket before piping', () => {
+        const proxySocket = { on: jest.fn(), setTimeout: jest.fn(), unshift: jest.fn(), pipe: jest.fn() };
+        proxySocket.pipe.mockReturnValue({ pipe: jest.fn() });
+        const clientSocket = {
+            write: jest.fn(),
+            unshift: jest.fn(),
+            pipe: jest.fn().mockReturnValue({ pipe: jest.fn() })
+        };
+
+        const instance = createProxySocket({ method: 'GET', url: '/', headers: {} }, clientSocket as never);
+        instance['onUpgrade']({ headers: {} } as never, proxySocket as never, Buffer.alloc(0));
+
+        expect(proxySocket.setTimeout).toHaveBeenCalledWith(0);
+        expect(proxySocket.setTimeout.mock.invocationCallOrder[0]).toBeLessThan(
+            proxySocket.pipe.mock.invocationCallOrder[0]
+        );
+    });
+});
