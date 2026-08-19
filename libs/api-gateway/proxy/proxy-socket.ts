@@ -5,6 +5,9 @@ import { ProxyServerOptions } from './proxy-server-option.type';
 import { IncomingMessage } from 'http';
 
 export class ProxySocket {
+    /** Bytes of the upgraded protocol that the HTTP parser consumed alongside the client handshake. */
+    private clientHead?: Buffer;
+
     constructor(
         private req: Request,
         private socket: Socket,
@@ -42,10 +45,11 @@ export class ProxySocket {
         );
     }
 
-    handleWebsocket(extraHeaders: NodeJS.Dict<string> = {}) {
+    handleWebsocket(extraHeaders: NodeJS.Dict<string> = {}, head?: Buffer) {
         if (!this.checkMethodAndHeader()) {
             return this.socket.destroy();
         }
+        this.clientHead = head;
         const url = new URL(this.options.host);
         const requestOptions: http.RequestOptions = {
             method: this.req.method,
@@ -81,6 +85,21 @@ export class ProxySocket {
         proxySocket.on('close', () => {
             this.socket.end();
         });
+
+        // Node's HTTP parser reads in whole chunks, so bytes belonging to the upgraded
+        // protocol can be consumed along with the handshake and handed over as a head
+        // buffer. They are already out of the stream, so piping alone would drop them —
+        // push each head back to the front of its socket before the pipes are wired.
+        // Servers that speak first (Engine.IO sends its OPEN packet immediately) lose
+        // that first frame otherwise, leaving a connection that looks live but never
+        // completes its handshake.
+        if (proxyHead?.length) {
+            proxySocket.unshift(proxyHead);
+        }
+
+        if (this.clientHead?.length) {
+            this.socket.unshift(this.clientHead);
+        }
 
         this.socket.write(this.createHttpHeader('HTTP/1.1 101 Switching Protocols', proxyRes.headers));
 

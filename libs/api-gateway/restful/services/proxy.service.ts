@@ -49,9 +49,9 @@ export class ProxyService implements OnModuleInit {
      */
     onModuleInit(): void {
         const serverInstance = this.adapterHost.httpAdapter;
-        serverInstance.getHttpServer().on('upgrade', async (request, socket) => {
+        serverInstance.getHttpServer().on('upgrade', async (request, socket, head) => {
             try {
-                await this.handleWebSocketRequest(request, socket);
+                await this.handleWebSocketRequest(request, socket, head);
             } catch (e) {
                 console.error(e);
             }
@@ -212,15 +212,17 @@ export class ProxyService implements OnModuleInit {
      * validate the WebSocket token, and forwards the request to the appropriate server with any necessary headers
      * @param {Request} request A request
      * @param {Socket} socket A socket
+     * @param {Buffer} head Upgraded-protocol bytes the HTTP parser consumed with the handshake
      */
-    private async handleWebSocketRequest(request: Request, socket: Socket): Promise<void> {
+    private async handleWebSocketRequest(request: Request, socket: Socket, head?: Buffer): Promise<void> {
         const serverName = this.getServerName(request.url);
         const proxyRequest = new ProxyRequest();
         if (!(await this.wsRequestService.handle(request, proxyRequest))) {
             throw new ForbiddenException();
         }
         await this.proxyServers[serverName].forwardWebsocket(request, socket, {
-            headers: proxyRequest.getKebabHeaders()
+            headers: proxyRequest.getKebabHeaders(),
+            head
         });
     }
 

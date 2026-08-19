@@ -56,3 +56,78 @@ describe('ProxySocket.createHttpHeader', () => {
         expect(proxySocket.createHttpHeader('HTTP/1.1 200 OK', {})).toBe('HTTP/1.1 200 OK\r\n\r\n');
     });
 });
+
+describe('ProxySocket upgrade head', () => {
+    /**
+     * Node hands over any upgraded-protocol bytes its HTTP parser consumed alongside the
+     * handshake. Those bytes are already out of the stream, so they must be pushed back
+     * before the sockets are piped or the first frame is lost — for a server that speaks
+     * first, that is the whole handshake.
+     */
+    function socketDouble() {
+        return {
+            setTimeout: jest.fn(),
+            setNoDelay: jest.fn(),
+            setKeepAlive: jest.fn(),
+            write: jest.fn(),
+            unshift: jest.fn(),
+            end: jest.fn(),
+            on: jest.fn(),
+            pipe: jest.fn().mockReturnValue({ pipe: jest.fn() }),
+            destroyed: false
+        };
+    }
+
+    function upgrade(proxyHead: Buffer, clientHead?: Buffer) {
+        const clientSocket = socketDouble();
+        const proxySocket = socketDouble();
+        const proxySocketInstance = createProxySocket(
+            { method: 'GET', url: '/socket.io/', headers: { upgrade: 'websocket' } },
+            clientSocket as never
+        );
+
+        proxySocketInstance['clientHead'] = clientHead;
+        proxySocketInstance['onUpgrade'](
+            { headers: { upgrade: 'websocket' } } as never,
+            proxySocket as never,
+            proxyHead
+        );
+
+        return { clientSocket, proxySocket };
+    }
+
+    it('replays the upstream head so a server-spoken first frame survives', () => {
+        const openPacket = Buffer.from('\x81\x6d0{"sid":"abc","pingInterval":25000}');
+        expect(upgrade(openPacket).proxySocket.unshift).toHaveBeenCalledWith(openPacket);
+    });
+
+    it('replays the upstream head before wiring the pipes', () => {
+        const { proxySocket } = upgrade(Buffer.from('frame'));
+        expect(proxySocket.unshift.mock.invocationCallOrder[0]).toBeLessThan(
+            proxySocket.pipe.mock.invocationCallOrder[0]
+        );
+    });
+
+    it('replays the client head onto the client socket', () => {
+        const clientHead = Buffer.from('early-client-frame');
+        expect(upgrade(Buffer.alloc(0), clientHead).clientSocket.unshift).toHaveBeenCalledWith(clientHead);
+    });
+
+    it('does not replay an absent or empty head', () => {
+        const { clientSocket, proxySocket } = upgrade(Buffer.alloc(0));
+        expect(proxySocket.unshift).not.toHaveBeenCalled();
+        expect(clientSocket.unshift).not.toHaveBeenCalled();
+    });
+
+    it('retains the client head handed to handleWebsocket', () => {
+        const clientHead = Buffer.from('pipelined');
+        const proxySocketInstance = createProxySocket(
+            { method: 'GET', url: '/socket.io/', headers: { upgrade: 'websocket' } },
+            socketDouble() as never
+        );
+
+        proxySocketInstance.handleWebsocket({}, clientHead);
+
+        expect(proxySocketInstance['clientHead']).toBe(clientHead);
+    });
+});
