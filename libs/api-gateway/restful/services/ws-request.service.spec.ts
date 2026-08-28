@@ -1,7 +1,8 @@
+import { describe, it, expect, vi } from 'vitest';
 import { IncomingMessage } from 'http';
 import { ModulesContainer } from '@nestjs/core';
-import { WsRequestService } from './ws-request.service';
-import { ProxyRequest } from '../models/proxy-request.model';
+import { WsRequestService } from './ws-request.service.js';
+import { ProxyRequest } from '../models/proxy-request.model.js';
 
 function createService(excludeHeaders: string[] = []): WsRequestService {
     return new WsRequestService(new Map() as unknown as ModulesContainer, { excludeHeaders } as never);
@@ -18,7 +19,7 @@ describe('WsRequestService.handle', () => {
 
     it('returns false when a handler rejects the upgrade', async () => {
         const service = createService();
-        asInternal(service).headerHandlers = [{ handle: jest.fn(async () => false) }];
+        asInternal(service).headerHandlers = [{ handle: vi.fn(async () => false) }];
         await expect(service.handle(request, new ProxyRequest())).resolves.toBe(false);
     });
 
@@ -26,7 +27,7 @@ describe('WsRequestService.handle', () => {
         const service = createService();
         asInternal(service).headerHandlers = [
             {
-                handle: jest.fn(async (_req: IncomingMessage, proxyRequest: ProxyRequest) => {
+                handle: vi.fn(async (_req: IncomingMessage, proxyRequest: ProxyRequest) => {
                     proxyRequest.addHeader('authUserId', '123');
                     return true;
                 })

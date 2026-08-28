@@ -1,6 +1,7 @@
+import { describe, it, expect, vi } from 'vitest';
 import { Request } from 'express';
 import { Socket } from 'node:net';
-import { ProxySocket } from './proxy-socket';
+import { ProxySocket } from './proxy-socket.js';
 
 function createProxySocket(request: Partial<Request>, socket: Partial<Socket> = {}): ProxySocket {
     return new ProxySocket(request as Request, socket as Socket, { host: 'http://localhost:18080' });
@@ -28,7 +29,7 @@ describe('ProxySocket.checkMethodAndHeader', () => {
     });
 
     it('destroys the socket when handling an invalid upgrade request', () => {
-        const destroy = jest.fn();
+        const destroy = vi.fn();
         const proxySocket = createProxySocket({ method: 'POST', headers: {} }, { destroy } as never);
         proxySocket.handleWebsocket();
         expect(destroy).toHaveBeenCalled();
@@ -66,14 +67,14 @@ describe('ProxySocket upgrade head', () => {
      */
     function socketDouble() {
         return {
-            setTimeout: jest.fn(),
-            setNoDelay: jest.fn(),
-            setKeepAlive: jest.fn(),
-            write: jest.fn(),
-            unshift: jest.fn(),
-            end: jest.fn(),
-            on: jest.fn(),
-            pipe: jest.fn().mockReturnValue({ pipe: jest.fn() }),
+            setTimeout: vi.fn(),
+            setNoDelay: vi.fn(),
+            setKeepAlive: vi.fn(),
+            write: vi.fn(),
+            unshift: vi.fn(),
+            end: vi.fn(),
+            on: vi.fn(),
+            pipe: vi.fn().mockReturnValue({ pipe: vi.fn() }),
             destroyed: false
         };
     }
@@ -163,12 +164,12 @@ describe('ProxySocket upstream idle timer', () => {
     });
 
     it('clears the inherited idle timeout on the upstream socket before piping', () => {
-        const proxySocket = { on: jest.fn(), setTimeout: jest.fn(), unshift: jest.fn(), pipe: jest.fn() };
-        proxySocket.pipe.mockReturnValue({ pipe: jest.fn() });
+        const proxySocket = { on: vi.fn(), setTimeout: vi.fn(), unshift: vi.fn(), pipe: vi.fn() };
+        proxySocket.pipe.mockReturnValue({ pipe: vi.fn() });
         const clientSocket = {
-            write: jest.fn(),
-            unshift: jest.fn(),
-            pipe: jest.fn().mockReturnValue({ pipe: jest.fn() })
+            write: vi.fn(),
+            unshift: vi.fn(),
+            pipe: vi.fn().mockReturnValue({ pipe: vi.fn() })
         };
 
         const instance = createProxySocket({ method: 'GET', url: '/', headers: {} }, clientSocket as never);

@@ -1,6 +1,6 @@
-// camelcase-keys is ESM-only and is not transformed by @swc/jest; replace it with a
-// minimal camelizer so x-extension keys behave like in production.
-jest.mock('camelcase-keys', () => ({
+import { describe, it, expect, vi } from 'vitest';
+// camelcase-keys is replaced with a minimal camelizer so x-extension keys behave like in production.
+vi.mock('camelcase-keys', () => ({
     __esModule: true,
     default: (object: Record<string, unknown>) => {
         const result: Record<string, unknown> = {};
@@ -13,8 +13,8 @@ jest.mock('camelcase-keys', () => ({
 
 import { of } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { OpenApiService } from './open-api.service';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { OpenApiService } from './open-api.service.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 
 const sampleDoc = {
     info: { title: 'User Service', version: '1.0.0' },
@@ -44,9 +44,9 @@ const sampleDoc = {
 
 function createService(optionOverrides: Partial<ApiGatewayOption> = {}): {
     service: OpenApiService;
-    httpGet: jest.Mock;
+    httpGet: Mock;
 } {
-    const httpGet = jest.fn();
+    const httpGet = vi.fn();
     const option = {
         openApiSecurityKeys: ['auth-jwt'],
         openApiSecurityApiKeys: ['api-key'],
@@ -235,7 +235,7 @@ describe('OpenApiService.getServiceDetail', () => {
     it('skips re-parsing when the document is unchanged', async () => {
         const { service, httpGet } = createService();
         httpGet.mockReturnValue(of({ status: 200, data: sampleDoc }));
-        const parseSpy = jest.spyOn(service, 'getEndpointDetail');
+        const parseSpy = vi.spyOn(service, 'getEndpointDetail');
 
         await service.getServiceDetail(apiService as never);
         await service.getServiceDetail(apiService as never);
@@ -245,7 +245,7 @@ describe('OpenApiService.getServiceDetail', () => {
 
     it('re-parses when the document changes', async () => {
         const { service, httpGet } = createService();
-        const parseSpy = jest.spyOn(service, 'getEndpointDetail');
+        const parseSpy = vi.spyOn(service, 'getEndpointDetail');
 
         httpGet.mockReturnValue(of({ status: 200, data: sampleDoc }));
         await service.getServiceDetail(apiService as never);

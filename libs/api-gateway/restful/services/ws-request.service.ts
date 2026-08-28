@@ -1,12 +1,12 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IncomingMessage } from 'http';
 import { ModulesContainer } from '@nestjs/core';
-import { getProviderByMetadata } from '../helpers/provider.helper';
-import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
-import { WsProxyMiddlewareHandler } from '../interfaces/ws-proxy-middleware.interface';
-import { WS_PROXY_MIDDLEWARE } from '../decorators/ws-proxy-middleware.decorator';
-import { ProxyRequest } from '../models/proxy-request.model';
+import { getProviderByMetadata } from '../helpers/provider.helper.js';
+import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
+import { WsProxyMiddlewareHandler } from '../interfaces/ws-proxy-middleware.interface.js';
+import { WS_PROXY_MIDDLEWARE } from '../decorators/ws-proxy-middleware.decorator.js';
+import { ProxyRequest } from '../models/proxy-request.model.js';
 
 @Injectable()
 export class WsRequestService implements OnModuleInit {

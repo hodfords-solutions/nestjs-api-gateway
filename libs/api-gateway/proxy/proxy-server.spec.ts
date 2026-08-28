@@ -1,5 +1,6 @@
+import { describe, it, expect } from 'vitest';
 import { Request } from 'express';
-import { ProxyServer } from './proxy-server';
+import { ProxyServer } from './proxy-server.js';
 
 function createServer(): ProxyServer {
     // The Pool is created lazily against this host; no connection is opened in these tests.

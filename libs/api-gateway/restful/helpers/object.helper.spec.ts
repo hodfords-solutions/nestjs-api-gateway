@@ -1,4 +1,5 @@
-import { kebabConvertKeys } from './object.helper';
+import { describe, it, expect } from 'vitest';
+import { kebabConvertKeys } from './object.helper.js';
 
 describe('kebabConvertKeys', () => {
     it('converts camelCase keys to kebab-case', () => {

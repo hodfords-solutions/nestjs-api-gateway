@@ -1,4 +1,5 @@
-import { ProxyRequest } from './proxy-request.model';
+import { describe, it, expect } from 'vitest';
+import { ProxyRequest } from './proxy-request.model.js';
 
 describe('ProxyRequest', () => {
     it('starts with no headers', () => {

@@ -1,6 +1,6 @@
 import { Controller, Post, Req, Res } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { McpServerService } from '../services/mcp-server.service';
+import { McpServerService } from '../services/mcp-server.service.js';
 
 @Controller()
 export class McpController {

@@ -1,26 +1,27 @@
+import { describe, it, expect, vi } from 'vitest';
 import { Test } from '@nestjs/testing';
 import type { Request, Response } from 'express';
-import { ThrottlerService } from './throttler.service';
-import { THROTTLER_OPTION, RATE_LIMIT_KEY } from '../constants/rate-limit.constant';
-import { REDIS_OPTION } from '../../redis/constants/redis.constant';
-import { TooManyRequestException } from '../exceptions/too-many-request.exception';
-import { ThrottlerOption } from '../types/throttler-option.type';
-import { RouterDetail } from '../../restful/types/router-path.type';
+import { ThrottlerService } from './throttler.service.js';
+import { THROTTLER_OPTION, RATE_LIMIT_KEY } from '../constants/rate-limit.constant.js';
+import { REDIS_OPTION } from '../../redis/constants/redis.constant.js';
+import { TooManyRequestException } from '../exceptions/too-many-request.exception.js';
+import { ThrottlerOption } from '../types/throttler-option.type.js';
+import { RouterDetail } from '../../restful/types/router-path.type.js';
 
 type RedisMock = {
     counts: Map<string, number>;
-    script: jest.Mock;
-    evalsha: jest.Mock;
-    get: jest.Mock;
-    on: jest.Mock;
+    script: Mock;
+    evalsha: Mock;
+    get: Mock;
+    on: Mock;
 };
 
 function createRedisMock(): RedisMock {
     const counts = new Map<string, number>();
     return {
         counts,
-        script: jest.fn().mockResolvedValue('fake-lua-sha'),
-        evalsha: jest.fn(async (_sha: string, _keyCount: number, key: string, limitStr: string) => {
+        script: vi.fn().mockResolvedValue('fake-lua-sha'),
+        evalsha: vi.fn(async (_sha: string, _keyCount: number, key: string, limitStr: string) => {
             const limit = Number(limitStr);
             const current = counts.get(key) ?? 0;
             if (current >= limit) {
@@ -29,11 +30,11 @@ function createRedisMock(): RedisMock {
             counts.set(key, current + 1);
             return 0;
         }),
-        get: jest.fn(async (key: string) => {
+        get: vi.fn(async (key: string) => {
             const v = counts.get(key);
             return v === undefined ? null : String(v);
         }),
-        on: jest.fn()
+        on: vi.fn()
     };
 }
 

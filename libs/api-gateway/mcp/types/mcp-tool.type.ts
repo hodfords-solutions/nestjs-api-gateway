@@ -1,4 +1,4 @@
-import { RouterDetail } from '../../restful/types/router-path.type';
+import { RouterDetail } from '../../restful/types/router-path.type.js';
 
 export type McpToolDefinition = {
     name: string;

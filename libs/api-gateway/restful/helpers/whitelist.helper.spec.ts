@@ -1,5 +1,6 @@
-import { isReqUrlInWhitelist } from './whitelist.helper';
-import { WHITELIST_PATHS } from '../constants/whitelist.constant';
+import { describe, it, expect } from 'vitest';
+import { isReqUrlInWhitelist } from './whitelist.helper.js';
+import { WHITELIST_PATHS } from '../constants/whitelist.constant.js';
 
 describe('isReqUrlInWhitelist', () => {
     it('matches when the URL starts with a whitelist entry', () => {

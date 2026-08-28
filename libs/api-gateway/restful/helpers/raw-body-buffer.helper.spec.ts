@@ -1,5 +1,6 @@
-import { rawBodyBufferHelper } from './raw-body-buffer.helper';
-import { STRIPE_SIGNATURE } from '../constants/special-headers.constant';
+import { describe, it, expect } from 'vitest';
+import { rawBodyBufferHelper } from './raw-body-buffer.helper.js';
+import { STRIPE_SIGNATURE } from '../constants/special-headers.constant.js';
 
 describe('rawBodyBufferHelper', () => {
     it('stores the raw body when the stripe signature header is present', () => {

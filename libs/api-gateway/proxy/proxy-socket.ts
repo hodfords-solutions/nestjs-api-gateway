@@ -1,7 +1,7 @@
 import { Request } from 'express';
 import { Socket } from 'node:net';
 import * as http from 'node:http';
-import { ProxyServerOptions } from './proxy-server-option.type';
+import { ProxyServerOptions } from './proxy-server-option.type.js';
 import { IncomingMessage } from 'http';
 
 export class ProxySocket {

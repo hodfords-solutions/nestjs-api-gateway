@@ -1,8 +1,9 @@
+import { describe, it, expect, vi } from 'vitest';
 import { IncomingMessage } from 'http';
 import { ModulesContainer } from '@nestjs/core';
-import { RequestService } from './request.service';
-import { ProxyRequest } from '../models/proxy-request.model';
-import { RouterDetail } from '../types/router-path.type';
+import { RequestService } from './request.service.js';
+import { ProxyRequest } from '../models/proxy-request.model.js';
+import { RouterDetail } from '../types/router-path.type.js';
 
 function createService(excludeHeaders: string[] = []): RequestService {
     return new RequestService(new Map() as unknown as ModulesContainer, { excludeHeaders } as never);
@@ -24,8 +25,8 @@ describe('RequestService.handle', () => {
         const service = createService();
         const calls: string[] = [];
         asInternal(service).headerHandlers = [
-            { handle: jest.fn(async () => calls.push('first') && true) },
-            { handle: jest.fn(async () => calls.push('second') && true) }
+            { handle: vi.fn(async () => calls.push('first') && true) },
+            { handle: vi.fn(async () => calls.push('second') && true) }
         ];
 
         await expect(service.handle(routerDetail, request, new ProxyRequest())).resolves.toBe(true);
@@ -34,8 +35,8 @@ describe('RequestService.handle', () => {
 
     it('short-circuits and returns false when a handler rejects the request', async () => {
         const service = createService();
-        const second = jest.fn(async () => true);
-        asInternal(service).headerHandlers = [{ handle: jest.fn(async () => false) }, { handle: second }];
+        const second = vi.fn(async () => true);
+        asInternal(service).headerHandlers = [{ handle: vi.fn(async () => false) }, { handle: second }];
 
         await expect(service.handle(routerDetail, request, new ProxyRequest())).resolves.toBe(false);
         expect(second).not.toHaveBeenCalled();

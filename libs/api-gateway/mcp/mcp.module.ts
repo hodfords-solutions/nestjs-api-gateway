@@ -1,10 +1,10 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { McpOption } from './types/mcp-option.type';
-import { MCP_OPTION } from './constants/mcp.constant';
-import { McpToolRegistryService } from './services/mcp-tool-registry.service';
-import { McpServerService } from './services/mcp-server.service';
-import { McpToolExecutorService } from './services/mcp-tool-executor.service';
-import { McpController } from './controllers/mcp.controller';
+import { McpOption } from './types/mcp-option.type.js';
+import { MCP_OPTION } from './constants/mcp.constant.js';
+import { McpToolRegistryService } from './services/mcp-tool-registry.service.js';
+import { McpServerService } from './services/mcp-server.service.js';
+import { McpToolExecutorService } from './services/mcp-tool-executor.service.js';
+import { McpController } from './controllers/mcp.controller.js';
 
 @Module({})
 export class McpModule {

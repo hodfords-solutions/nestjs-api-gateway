@@ -8,21 +8,21 @@ import {
     OnModuleInit,
     ServiceUnavailableException
 } from '@nestjs/common';
-import { OpenApiService } from './open-api.service';
-import { ApiServiceDetail } from '../types/api-service.type';
+import { OpenApiService } from './open-api.service.js';
+import { ApiServiceDetail } from '../types/api-service.type.js';
 import { Request, Response } from 'express';
-import { RequestService } from './request.service';
-import { ThrottlerService } from '../../throttlers/services/throttler.service';
-import { DEFAULT_SERVER_NAME } from '../constants/default-server-name.constant';
+import { RequestService } from './request.service.js';
+import { ThrottlerService } from '../../throttlers/services/throttler.service.js';
+import { DEFAULT_SERVER_NAME } from '../constants/default-server-name.constant.js';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Socket } from 'node:net';
-import { WsRequestService } from './ws-request.service';
-import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
-import { ProxyRequest } from '../models/proxy-request.model';
-import { isReqUrlInWhitelist } from '../helpers/whitelist.helper';
-import { matchesPrefixSegment } from '../helpers/prefix.helper';
-import { ProxyServer } from '../../proxy/proxy-server';
+import { WsRequestService } from './ws-request.service.js';
+import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
+import { ProxyRequest } from '../models/proxy-request.model.js';
+import { isReqUrlInWhitelist } from '../helpers/whitelist.helper.js';
+import { matchesPrefixSegment } from '../helpers/prefix.helper.js';
+import { ProxyServer } from '../../proxy/proxy-server.js';
 import { Dispatcher } from 'undici';
 import ResponseData = Dispatcher.ResponseData;
 

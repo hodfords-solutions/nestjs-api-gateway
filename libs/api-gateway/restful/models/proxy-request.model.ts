@@ -1,4 +1,4 @@
-import { kebabConvertKeys } from '../helpers/object.helper';
+import { kebabConvertKeys } from '../helpers/object.helper.js';
 
 export class ProxyRequest {
     headers: { [key: string]: string } = {};

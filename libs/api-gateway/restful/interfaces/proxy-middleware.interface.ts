@@ -1,6 +1,6 @@
-import { RouterDetail } from '../../index';
+import { RouterDetail } from '../../index.js';
 import { IncomingMessage } from 'http';
-import { ProxyRequest } from '../models/proxy-request.model';
+import { ProxyRequest } from '../models/proxy-request.model.js';
 
 export interface ProxyMiddlewareHandler {
     handle(

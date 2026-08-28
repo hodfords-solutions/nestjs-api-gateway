@@ -1,13 +1,13 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { Request, Response } from 'express';
-import Redis from 'ioredis';
-import { ttlToHumanReadable } from '../../restful/helpers/string.helper';
-import { RateLimit, RouterDetail } from '../../restful/types/router-path.type';
-import { LUA_INCREASE_AND_GET_SCRIPT } from '../constants/lua-script.constant';
-import { RATE_LIMIT_KEY, THROTTLER_OPTION } from '../constants/rate-limit.constant';
-import { TooManyRequestException } from '../exceptions/too-many-request.exception';
-import { ThrottlerOption } from '../types/throttler-option.type';
-import { REDIS_OPTION } from '../../redis/constants/redis.constant';
+import { Redis } from 'ioredis';
+import { ttlToHumanReadable } from '../../restful/helpers/string.helper.js';
+import { RateLimit, RouterDetail } from '../../restful/types/router-path.type.js';
+import { LUA_INCREASE_AND_GET_SCRIPT } from '../constants/lua-script.constant.js';
+import { RATE_LIMIT_KEY, THROTTLER_OPTION } from '../constants/rate-limit.constant.js';
+import { TooManyRequestException } from '../exceptions/too-many-request.exception.js';
+import { ThrottlerOption } from '../types/throttler-option.type.js';
+import { REDIS_OPTION } from '../../redis/constants/redis.constant.js';
 
 const resolvedIdentityKey = Symbol('throttler.resolvedIdentity');
 const globalIpCheckedKey = Symbol('throttler.globalIpChecked');

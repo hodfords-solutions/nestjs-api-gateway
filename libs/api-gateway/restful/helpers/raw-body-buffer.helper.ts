@@ -1,4 +1,4 @@
-import { STRIPE_SIGNATURE } from '../constants/special-headers.constant';
+import { STRIPE_SIGNATURE } from '../constants/special-headers.constant.js';
 
 export const rawBodyBufferHelper = (req: any, res: any, buffer: Buffer, encoding: BufferEncoding): void => {
     if (!req.headers[STRIPE_SIGNATURE]) {

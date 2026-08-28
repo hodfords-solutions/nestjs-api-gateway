@@ -22,6 +22,16 @@ The API Gateway houses the source code and documentation for the API Gateway - a
 
 ## Usage
 
+#### Requirements
+This package is **ESM-only** and targets **NestJS 12**. It requires Node.js `>=20.19.0`
+(`>=22.12`, `>=24.15` or `>=26` on newer major lines) and must be loaded with `import`,
+not `require()`.
+
+| Package version | NestJS |
+|---|---|
+| `12.x` | NestJS 12 |
+| `11.x` | NestJS 11 |
+
 #### Install
 ```shell
 npm install @hodfords/api-gateway

@@ -3,9 +3,9 @@ import { IncomingHttpHeaders, OutgoingHttpHeaders, ServerResponse } from 'node:h
 import { pipeline } from 'stream/promises';
 import { Request } from 'express';
 import RequestOptions = Dispatcher.RequestOptions;
-import { ProxyServerOptions } from './proxy-server-option.type';
+import { ProxyServerOptions } from './proxy-server-option.type.js';
 import { Socket } from 'node:net';
-import { ProxySocket } from './proxy-socket';
+import { ProxySocket } from './proxy-socket.js';
 
 const hopByHopHeaders = new Set([
     'connection',

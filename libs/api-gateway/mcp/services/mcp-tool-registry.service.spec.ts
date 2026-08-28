@@ -1,9 +1,10 @@
-// camelcase-keys (pulled in via open-api.service) is ESM-only and not transformed by @swc/jest.
-jest.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
+import { describe, it, expect, vi } from 'vitest';
+// camelcase-keys (pulled in via open-api.service) is stubbed so the tests stay deterministic.
+vi.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
 
-import { McpToolRegistryService } from './mcp-tool-registry.service';
-import { McpOption } from '../types/mcp-option.type';
-import { OpenApiService } from '../../restful/services/open-api.service';
+import { McpToolRegistryService } from './mcp-tool-registry.service.js';
+import { McpOption } from '../types/mcp-option.type.js';
+import { OpenApiService } from '../../restful/services/open-api.service.js';
 
 function makeRouterDetail(overrides: Record<string, unknown> = {}): any {
     return {
@@ -79,7 +80,7 @@ describe('McpToolRegistryService.refreshTools', () => {
     });
 
     it('applies the custom filter callback', () => {
-        const filter = jest.fn().mockReturnValue(false);
+        const filter = vi.fn().mockReturnValue(false);
         const service = createService({ filter });
         service.refreshTools();
         expect(service.getTools()).toHaveLength(0);
@@ -172,7 +173,7 @@ describe('McpToolRegistryService.buildInputSchema (via refreshTools)', () => {
     });
 
     it('omits parameters rejected by the parameterFilter', () => {
-        const parameterFilter = jest.fn((param) => param.name !== 'status');
+        const parameterFilter = vi.fn((param) => param.name !== 'status');
         const service = createService({ parameterFilter }, { originDocs: { users: originDoc } });
         service.refreshTools();
         const schema = service.getTools()[0].inputSchema;
@@ -247,7 +248,7 @@ describe('McpToolRegistryService.resolveSchema', () => {
 
     it('logs a warning when a schema type cannot be mapped', () => {
         const service = createService();
-        const warn = jest.spyOn((service as never as { logger: { warn: jest.Mock } }).logger, 'warn');
+        const warn = vi.spyOn((service as never as { logger: { warn: Mock } }).logger, 'warn');
         asInternal(service).resolveSchema(
             {},
             { type: 'object', properties: { weird: { type: 'function Whatever() { [native code] }' } } }

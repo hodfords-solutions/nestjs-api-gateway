@@ -1,6 +1,7 @@
+import { describe, it, expect, afterEach } from 'vitest';
 import 'reflect-metadata';
 import { ModulesContainer } from '@nestjs/core';
-import { getProviderByMetadata } from './provider.helper';
+import { getProviderByMetadata } from './provider.helper.js';
 
 const METADATA_KEY = 'TEST_PROVIDER_METADATA';
 

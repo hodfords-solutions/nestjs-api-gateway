@@ -1,8 +1,7 @@
 import { Request } from 'express';
 import { ServerResponse } from 'node:http';
-import { Dispatcher } from 'undici';
+import { Dispatcher, Pool } from 'undici';
 import ResponseData = Dispatcher.ResponseData;
-import Pool from 'undici/types/pool';
 
 export type ProxyServerOptions = {
     host: string;

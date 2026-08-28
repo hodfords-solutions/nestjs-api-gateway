@@ -1,8 +1,8 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { OpenApiService } from '../services/open-api.service';
-import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { OpenApiService } from '../services/open-api.service.js';
+import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 
 @Injectable()
 export class UpdateApiDocumentTask {

@@ -15,9 +15,23 @@
     "homepage": "https://opensource.hodfords.uk/",
     "scripts": {},
     "devDependencies": {
-        "@nestjs/swagger": "11.4.4"
+        "@nestjs/swagger": "12.0.0"
     },
     "peerDependencies": {
         "@nestjs/swagger": "*"
+    },
+    "type": "module",
+    "main": "./index.js",
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "import": "./index.js",
+            "default": "./index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "engines": {
+        "node": ">=20.19.0"
     }
 }

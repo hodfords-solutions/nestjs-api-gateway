@@ -1,16 +1,20 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ThrottlerModule } from './throttlers/throttler.module';
-import { RestfulModule } from './restful/restful.module';
-import { McpModule } from './mcp/mcp.module';
-import { ApiGatewayOption } from './types/api-gateway-option.type';
-import { API_GATEWAY_OPTION } from './constants/api-gateway.constant';
-import { REDIS_OPTION } from './redis/constants/redis.constant';
-import Redis from 'ioredis';
+import { ThrottlerModule } from './throttlers/throttler.module.js';
+import { RestfulModule } from './restful/restful.module.js';
+import { McpModule } from './mcp/mcp.module.js';
+import { ApiGatewayOption } from './types/api-gateway-option.type.js';
+import { API_GATEWAY_OPTION } from './constants/api-gateway.constant.js';
+import { REDIS_OPTION } from './redis/constants/redis.constant.js';
+import { Redis } from 'ioredis';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
 @Module({})
 export class ApiGatewayModule {
     static forRoot(option: ApiGatewayOption): DynamicModule {
-        option.libraryPath = __dirname;
+        option.libraryPath = currentDir;
 
         const redisProvider = {
             provide: REDIS_OPTION,

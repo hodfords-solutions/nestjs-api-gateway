@@ -1,4 +1,5 @@
-import { matchesPrefixSegment } from './prefix.helper';
+import { describe, it, expect } from 'vitest';
+import { matchesPrefixSegment } from './prefix.helper.js';
 
 describe('matchesPrefixSegment', () => {
     // Contract config-and-routing.md B4 (R7–R10)
