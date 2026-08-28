@@ -1,6 +1,6 @@
 import { CacheModule } from '@nestjs/cache-manager';
 import KeyvRedis from '@keyv/redis';
-import { env } from '~config/env.config.js';
+import { env } from './env.config.js';
 
 const protocol = env.REDIS.TLS ? 'rediss' : 'redis';
 

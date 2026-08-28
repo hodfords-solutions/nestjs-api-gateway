@@ -1,6 +1,6 @@
 import { Controller, Get, Req } from '@nestjs/common';
-import { OpenApiService } from '@hodfords/api-gateway';
-import { ApiRateLimit } from '@hodfords/api-gateway-client';
+import { OpenApiService } from '../libs/api-gateway/index.js';
+import { ApiRateLimit } from '../libs/client/index.js';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 @ApiTags('app')

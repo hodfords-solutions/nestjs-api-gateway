@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { readFileSync } from 'fs';
 import { ConnectionOptions } from 'tls';
-import { ApiServiceDetail } from '@hodfords/api-gateway';
+import { ApiServiceDetail } from '../../libs/api-gateway/index.js';
 
 dotenv.config();
 
