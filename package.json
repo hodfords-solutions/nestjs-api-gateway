@@ -82,9 +82,6 @@
     "overrides": {
         "@nestjs/schematics": {
             "typescript": "$typescript"
-        },
-        "@nestjs/cli": {
-            "typescript": "$typescript"
         }
     },
     "type": "module",
