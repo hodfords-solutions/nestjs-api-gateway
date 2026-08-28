@@ -1,6 +1,4 @@
-import lodash from 'lodash';
-
-const { kebabCase } = lodash;
+import { kebabCase } from 'es-toolkit';
 
 /**
  * Memoized kebab-case conversions. Keys come from gateway middleware, so the set is small
