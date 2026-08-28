@@ -1,4 +1,4 @@
-import { WHITELIST_PATHS } from '../constants/whitelist.constant';
+import { WHITELIST_PATHS } from '../constants/whitelist.constant.js';
 
 export const isReqUrlInWhitelist = (reqUrl: string, whitelist: string[]): boolean => {
     if (!whitelist.length) {

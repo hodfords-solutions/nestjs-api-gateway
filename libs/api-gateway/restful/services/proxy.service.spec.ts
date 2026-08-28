@@ -1,11 +1,12 @@
-// camelcase-keys (pulled in transitively via open-api.service) is ESM-only and is not
-// transformed by @swc/jest; it is unused on the code paths under test, so stub it out.
-jest.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
+import { describe, it, expect, vi } from 'vitest';
+// camelcase-keys (pulled in transitively via open-api.service) is unused on the code paths
+// under test, so stub it out.
+vi.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
 
 import { ServiceUnavailableException } from '@nestjs/common';
 import type { Request } from 'express';
-import { ProxyService } from './proxy.service';
-import { ApiServiceDetail } from '../types/api-service.type';
+import { ProxyService } from './proxy.service.js';
+import { ApiServiceDetail } from '../types/api-service.type.js';
 
 /**
  * These tests exercise the routing/forwarding logic directly (getServerName, removePath,
@@ -14,14 +15,14 @@ import { ApiServiceDetail } from '../types/api-service.type';
  */
 function createService(optionOverrides: Record<string, unknown> = {}): {
     service: ProxyService;
-    swaggerService: { apiDocs: Record<string, unknown>; getRouterDetail: jest.Mock; getServiceDetail: jest.Mock };
+    swaggerService: { apiDocs: Record<string, unknown>; getRouterDetail: Mock; getServiceDetail: Mock };
 } {
     const swaggerService = {
         apiDocs: {} as Record<string, unknown>,
-        getRouterDetail: jest.fn(),
-        getServiceDetail: jest.fn()
+        getRouterDetail: vi.fn(),
+        getServiceDetail: vi.fn()
     };
-    const requestService = { isStaticRequest: jest.fn().mockReturnValue(false) };
+    const requestService = { isStaticRequest: vi.fn().mockReturnValue(false) };
     const wsRequestService = {};
     const throttlerService = {};
     const adapterHost = {};

@@ -1,4 +1,5 @@
-import { isValidUrl, getPathFromUrl, ttlToHumanReadable } from './string.helper';
+import { describe, it, expect } from 'vitest';
+import { isValidUrl, getPathFromUrl, ttlToHumanReadable } from './string.helper.js';
 
 describe('isValidUrl', () => {
     it('accepts absolute URLs', () => {

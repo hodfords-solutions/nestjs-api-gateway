@@ -1,7 +1,7 @@
 import { DynamicModule, Module } from '@nestjs/common';
-import { ThrottlerService } from './services/throttler.service';
-import { ThrottlerOption } from './types/throttler-option.type';
-import { THROTTLER_OPTION } from './constants/rate-limit.constant';
+import { ThrottlerService } from './services/throttler.service.js';
+import { ThrottlerOption } from './types/throttler-option.type.js';
+import { THROTTLER_OPTION } from './constants/rate-limit.constant.js';
 
 @Module({})
 export class ThrottlerModule {

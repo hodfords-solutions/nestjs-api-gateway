@@ -1,5 +1,7 @@
 import { ModulesContainer } from '@nestjs/core';
-import { sortBy } from 'lodash';
+import lodash from 'lodash';
+
+const { sortBy } = lodash;
 
 export function getProviderByMetadata(key: string, modulesContainer: ModulesContainer) {
     const providerModules = [...modulesContainer.values()].map((module) => module.providers.values());

@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AppController } from '~app.controller';
+import { AppController } from '~app.controller.js';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ApiGatewayModule } from '@hodfords/api-gateway';
-import { redisConfig } from '~config/redis.config';
-import { AuthenticationMiddleware } from '~middleware/authentication.middleware';
-import { StaticRequestMiddleware } from '~middleware/static-request.middleware';
-import { WsAuthenticationMiddleware } from '~middleware/ws-authentication.middleware';
-import { McpAuthenticationMiddlewareImpl } from '~middleware/mcp-authentication.middleware';
-import { env } from '~config/env.config';
+import { redisConfig } from '~config/redis.config.js';
+import { AuthenticationMiddleware } from '~middleware/authentication.middleware.js';
+import { StaticRequestMiddleware } from '~middleware/static-request.middleware.js';
+import { WsAuthenticationMiddleware } from '~middleware/ws-authentication.middleware.js';
+import { McpAuthenticationMiddlewareImpl } from '~middleware/mcp-authentication.middleware.js';
+import { env } from '~config/env.config.js';
 
 @Module({
     imports: [

@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '~app.module';
+import { AppModule } from '~app.module.js';
 import { NestExpressApplication } from '@nestjs/platform-express';
-import { join } from 'path';
-import { env } from '~config/env.config';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+import { env } from '~config/env.config.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+
+const currentDir = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Initialize and configures a NestJS application,
@@ -13,8 +16,8 @@ async function bootstrap(): Promise<void> {
     const app = await NestFactory.create<NestExpressApplication>(AppModule, {
         bodyParser: false
     });
-    app.setBaseViewsDir(join(__dirname, 'views'));
-    app.useStaticAssets(join(__dirname, 'statics'), { prefix: '/statics' });
+    app.setBaseViewsDir(join(currentDir, 'views'));
+    app.useStaticAssets(join(currentDir, 'statics'), { prefix: '/statics' });
     app.setViewEngine('hbs');
 
     app.set('trust proxy', ['loopback', 'linklocal', 'uniquelocal']);

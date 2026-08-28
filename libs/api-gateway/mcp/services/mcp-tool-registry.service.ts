@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { OpenApiService } from '../../restful/services/open-api.service';
-import { McpToolDefinition } from '../types/mcp-tool.type';
-import { MAX_TOOL_NAME_LENGTH, MCP_OPTION } from '../constants/mcp.constant';
-import { McpOption, McpParameterFilterContext } from '../types/mcp-option.type';
-import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { OpenApiService } from '../../restful/services/open-api.service.js';
+import { McpToolDefinition } from '../types/mcp-tool.type.js';
+import { MAX_TOOL_NAME_LENGTH, MCP_OPTION } from '../constants/mcp.constant.js';
+import { McpOption, McpParameterFilterContext } from '../types/mcp-option.type.js';
+import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 
 const jsonSchemaTypes = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'];
 

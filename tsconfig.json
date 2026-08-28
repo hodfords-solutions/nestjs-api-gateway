@@ -1,28 +1,28 @@
 {
-  "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "target": "es2021",
-    "sourceMap": true,
-    "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "~*": [
-        "src/*"
-      ],
-      "@hodfords/api-gateway": ["libs/api-gateway"],
-      "@hodfords/api-gateway-client": ["libs/client"],
-      "@hodfords/http-proxy": ["libs/http-proxy"]
+    "compilerOptions": {
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "target": "es2023",
+        "lib": ["es2023"],
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+        "declaration": true,
+        "removeComments": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "sourceMap": true,
+        "skipLibCheck": true,
+        "outDir": "./dist",
+        "baseUrl": "./",
+        "incremental": true,
+        "resolveJsonModule": true,
+        "paths": {
+            "~*": ["src/*"],
+            "@hodfords/api-gateway": ["libs/api-gateway/index.ts"],
+            "@hodfords/api-gateway-client": ["libs/client/index.ts"],
+            "@hodfords/http-proxy": ["libs/http-proxy/index.ts"]
+        }
     },
-    "skipLibCheck": true
-  },
-  "include": ["libs", "src", "test"],
-  "exclude": ["node_modules", "dist"],
+    "include": ["libs", "src", "test"],
+    "exclude": ["node_modules", "dist"]
 }

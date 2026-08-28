@@ -1,10 +1,11 @@
-// camelcase-keys (pulled in via open-api.service) is ESM-only and not transformed by @swc/jest.
-jest.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
+import { describe, it, expect, vi } from 'vitest';
+// camelcase-keys (pulled in via open-api.service) is stubbed so the tests stay deterministic.
+vi.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
 
 import { IncomingMessage } from 'http';
-import { McpToolExecutorService } from './mcp-tool-executor.service';
-import { McpToolDefinition } from '../types/mcp-tool.type';
-import { ProxyRequest } from '../../restful/models/proxy-request.model';
+import { McpToolExecutorService } from './mcp-tool-executor.service.js';
+import { McpToolDefinition } from '../types/mcp-tool.type.js';
+import { ProxyRequest } from '../../restful/models/proxy-request.model.js';
 
 function makeTool(overrides: Partial<McpToolDefinition> = {}): McpToolDefinition {
     return {
@@ -21,16 +22,16 @@ function makeTool(overrides: Partial<McpToolDefinition> = {}): McpToolDefinition
 
 function createService(overrides: {
     tool?: McpToolDefinition | undefined;
-    throttler?: Partial<{ checkLimitOfRequest: jest.Mock }>;
-    requestService?: Partial<{ handle: jest.Mock }>;
+    throttler?: Partial<{ checkLimitOfRequest: Mock }>;
+    requestService?: Partial<{ handle: Mock }>;
     poolResponse?: { statusCode: number; body: AsyncIterable<Buffer> };
-}): { service: McpToolExecutorService; poolRequest: jest.Mock } {
-    const toolRegistryService = { getToolByName: jest.fn().mockReturnValue(overrides.tool) };
+}): { service: McpToolExecutorService; poolRequest: Mock } {
+    const toolRegistryService = { getToolByName: vi.fn().mockReturnValue(overrides.tool) };
     const throttlerService = {
-        checkLimitOfRequest: jest.fn().mockResolvedValue(undefined),
+        checkLimitOfRequest: vi.fn().mockResolvedValue(undefined),
         ...overrides.throttler
     };
-    const requestService = { handle: jest.fn().mockResolvedValue(true), ...overrides.requestService };
+    const requestService = { handle: vi.fn().mockResolvedValue(true), ...overrides.requestService };
     const service = new McpToolExecutorService(
         toolRegistryService as never,
         {} as never,
@@ -39,7 +40,7 @@ function createService(overrides: {
         { apiServices: [] } as never
     );
 
-    const poolRequest = jest.fn().mockResolvedValue(
+    const poolRequest = vi.fn().mockResolvedValue(
         overrides.poolResponse || {
             statusCode: 200,
             body: (async function* () {
@@ -147,7 +148,7 @@ describe('McpToolExecutorService.executeTool', () => {
     it('returns a forbidden result when gateway middleware rejects the request', async () => {
         const { service } = createService({
             tool: makeTool(),
-            requestService: { handle: jest.fn().mockResolvedValue(false) }
+            requestService: { handle: vi.fn().mockResolvedValue(false) }
         });
         const result = await service.executeTool('users_UserController_show', {}, request);
         expect(result.isError).toBe(true);
@@ -157,7 +158,7 @@ describe('McpToolExecutorService.executeTool', () => {
     it('returns an error result when throttling rejects the request', async () => {
         const { service } = createService({
             tool: makeTool(),
-            throttler: { checkLimitOfRequest: jest.fn().mockRejectedValue(new Error('Too many requests')) }
+            throttler: { checkLimitOfRequest: vi.fn().mockRejectedValue(new Error('Too many requests')) }
         });
         const result = await service.executeTool('users_UserController_show', {}, request);
         expect(result.isError).toBe(true);

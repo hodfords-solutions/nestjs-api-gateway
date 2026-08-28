@@ -3,13 +3,13 @@ import { ModulesContainer } from '@nestjs/core';
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { ListToolsRequestSchema, CallToolRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { McpToolRegistryService } from './mcp-tool-registry.service';
-import { McpToolExecutorService } from './mcp-tool-executor.service';
-import { MCP_OPTION } from '../constants/mcp.constant';
-import { McpOption } from '../types/mcp-option.type';
-import { MCP_AUTHENTICATION_MIDDLEWARE } from '../decorators/mcp-authentication-middleware.decorator';
-import { McpAuthenticationMiddlewareHandler } from '../interfaces/mcp-authentication-middleware.interface';
-import { getProviderByMetadata } from '../../restful/helpers/provider.helper';
+import { McpToolRegistryService } from './mcp-tool-registry.service.js';
+import { McpToolExecutorService } from './mcp-tool-executor.service.js';
+import { MCP_OPTION } from '../constants/mcp.constant.js';
+import { McpOption } from '../types/mcp-option.type.js';
+import { MCP_AUTHENTICATION_MIDDLEWARE } from '../decorators/mcp-authentication-middleware.decorator.js';
+import { McpAuthenticationMiddlewareHandler } from '../interfaces/mcp-authentication-middleware.interface.js';
+import { getProviderByMetadata } from '../../restful/helpers/provider.helper.js';
 import { Request, Response } from 'express';
 
 @Injectable()

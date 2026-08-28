@@ -1,7 +1,8 @@
+import { describe, it, expect } from 'vitest';
 import 'reflect-metadata';
-import { addApiExtension, getApiExtensions } from './api-extension';
-import { ApiRateLimit } from '../decorators/api-rate-limit.decorator';
-import { ApiMcp } from '../decorators/api-mcp.decorator';
+import { addApiExtension, getApiExtensions } from './api-extension.js';
+import { ApiRateLimit } from '../decorators/api-rate-limit.decorator.js';
+import { ApiMcp } from '../decorators/api-mcp.decorator.js';
 
 function makeDescriptor(): PropertyDescriptor {
     return { value: function handler(): void {} };

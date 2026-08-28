@@ -1,15 +1,15 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { IncomingMessage } from 'http';
-import { RouterDetail } from '../types/router-path.type';
+import { RouterDetail } from '../types/router-path.type.js';
 import { ModulesContainer } from '@nestjs/core';
-import { getProviderByMetadata } from '../helpers/provider.helper';
-import { ProxyMiddlewareHandler } from '../interfaces/proxy-middleware.interface';
-import { ProxyValidationHandler } from '../interfaces/proxy-validation.interface';
-import { PROXY_VALIDATION } from '../decorators/proxy-validation.decorator';
-import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
-import { ProxyRequest } from '../models/proxy-request.model';
-import { PROXY_MIDDLEWARE } from '../decorators/proxy-middleware.decorator';
+import { getProviderByMetadata } from '../helpers/provider.helper.js';
+import { ProxyMiddlewareHandler } from '../interfaces/proxy-middleware.interface.js';
+import { ProxyValidationHandler } from '../interfaces/proxy-validation.interface.js';
+import { PROXY_VALIDATION } from '../decorators/proxy-validation.decorator.js';
+import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
+import { ProxyRequest } from '../models/proxy-request.model.js';
+import { PROXY_MIDDLEWARE } from '../decorators/proxy-middleware.decorator.js';
 
 @Injectable()
 export class RequestService implements OnModuleInit {

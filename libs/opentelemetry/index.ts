@@ -1,2 +1,2 @@
-export * from './tracing';
-export * from './type';
+export * from './tracing.js';
+export * from './type.js';

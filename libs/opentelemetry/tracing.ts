@@ -1,4 +1,4 @@
-import { OpenTelemetryOptions } from './type';
+import { OpenTelemetryOptions } from './type.js';
 import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-proto';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { resourceFromAttributes } from '@opentelemetry/resources';

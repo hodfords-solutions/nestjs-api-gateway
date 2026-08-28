@@ -1,16 +1,16 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
-import { DocumentType } from '../types/document.type';
-import { RouterDetail, RouterPathType } from '../types/router-path.type';
-import { EndpointDetail } from '../types/endpoint-detail.type';
+import { DocumentType } from '../types/document.type.js';
+import { RouterDetail, RouterPathType } from '../types/router-path.type.js';
+import { EndpointDetail } from '../types/endpoint-detail.type.js';
 import { match } from 'path-to-regexp';
 import camelcaseKeys from 'camelcase-keys';
 import { HttpService } from '@nestjs/axios';
-import { ApiServiceDetail } from '../types/api-service.type';
+import { ApiServiceDetail } from '../types/api-service.type.js';
 import { firstValueFrom } from 'rxjs';
-import { getPathFromUrl } from '../helpers/string.helper';
-import { DEFAULT_SERVER_NAME } from '../constants/default-server-name.constant';
-import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant';
-import { ApiGatewayOption } from '../../types/api-gateway-option.type';
+import { getPathFromUrl } from '../helpers/string.helper.js';
+import { DEFAULT_SERVER_NAME } from '../constants/default-server-name.constant.js';
+import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
+import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 
 @Injectable()
 export class OpenApiService {

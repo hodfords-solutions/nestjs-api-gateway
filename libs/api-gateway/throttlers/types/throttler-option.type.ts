@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import type { RouterDetail } from '../../restful/types/router-path.type';
+import type { RouterDetail } from '../../restful/types/router-path.type.js';
 
 export type ThrottlerKeyResolverContext = {
     request: Request;
