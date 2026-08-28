@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import { ProxyRequest, WsProxyMiddleware, WsProxyMiddlewareHandler } from '@hodfords/api-gateway';
+import { ProxyRequest, WsProxyMiddleware, WsProxyMiddlewareHandler } from '../../libs/api-gateway/index.js';
 
 @WsProxyMiddleware()
 export class WsAuthenticationMiddleware implements WsProxyMiddlewareHandler {

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { McpAuthenticationMiddleware, McpAuthenticationMiddlewareHandler } from '@hodfords/api-gateway';
+import { McpAuthenticationMiddleware, McpAuthenticationMiddlewareHandler } from '../../libs/api-gateway/index.js';
 
 @McpAuthenticationMiddleware()
 export class McpAuthenticationMiddlewareImpl implements McpAuthenticationMiddlewareHandler {

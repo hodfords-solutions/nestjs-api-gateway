@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import { ProxyValidation, ProxyValidationHandler } from '@hodfords/api-gateway';
+import { ProxyValidation, ProxyValidationHandler } from '../../libs/api-gateway/index.js';
 
 @ProxyValidation()
 export class StaticRequestMiddleware implements ProxyValidationHandler {

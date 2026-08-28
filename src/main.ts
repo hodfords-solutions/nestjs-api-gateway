@@ -1,9 +1,9 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '~app.module.js';
+import { AppModule } from './app.module.js';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { env } from '~config/env.config.js';
+import { env } from './config/env.config.js';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));

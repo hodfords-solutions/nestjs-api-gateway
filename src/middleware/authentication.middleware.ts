@@ -1,5 +1,5 @@
 import { IncomingMessage } from 'http';
-import { RouterDetail, ProxyMiddlewareHandler, ProxyMiddleware, ProxyRequest } from '@hodfords/api-gateway';
+import { RouterDetail, ProxyMiddlewareHandler, ProxyMiddleware, ProxyRequest } from '../../libs/api-gateway/index.js';
 
 @ProxyMiddleware()
 export class AuthenticationMiddleware implements ProxyMiddlewareHandler {
