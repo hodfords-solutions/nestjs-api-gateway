@@ -65,9 +65,10 @@ export class McpToolExecutorService {
                 content: [{ type: 'text', text: response }]
             };
         } catch (error) {
-            this.logger.error(`Tool execution failed: ${toolName}`, error.stack || error.message);
+            const { stack, message } = (error ?? {}) as { stack?: string; message?: string };
+            this.logger.error(`Tool execution failed: ${toolName}`, stack || message);
             return {
-                content: [{ type: 'text', text: `Error executing ${toolName}: ${error.message}` }],
+                content: [{ type: 'text', text: `Error executing ${toolName}: ${message}` }],
                 isError: true
             };
         }

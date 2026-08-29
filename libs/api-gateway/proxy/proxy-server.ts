@@ -53,7 +53,10 @@ export class ProxyServer {
         }
         if (customHeaders) {
             Object.keys(customHeaders).forEach((key: string) => {
-                requestHeaders.set(key, customHeaders[key]);
+                const value = customHeaders[key];
+                if (value !== undefined) {
+                    requestHeaders.set(key, value);
+                }
             });
         }
 
@@ -101,7 +104,7 @@ export class ProxyServer {
             await pipeline(body, res);
         } catch (error) {
             if (this.options.errorHandler) {
-                this.options.errorHandler(error, req, res);
+                this.options.errorHandler(error as Error, req, res);
             } else {
                 throw error;
             }

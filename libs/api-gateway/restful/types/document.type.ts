@@ -1,10 +1,19 @@
 /**
  * HTTP Operation Type
  */
-type OperationType = {
+export type OperationType = {
     operationId: string;
     parameters: NodeJS.Dict<any>[];
     responses: NodeJS.Dict<any>;
+};
+
+/**
+ * An operation after `camelcaseKeys`, including the `x-` extensions the gateway reads.
+ */
+export type CamelCasedOperationType = OperationType & {
+    description?: string;
+    xRouterPath?: string;
+    xRateLimits?: any[];
 };
 
 /**

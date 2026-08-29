@@ -16,6 +16,8 @@ import { ThrottlerService } from '../../throttlers/services/throttler.service.js
 import { DEFAULT_SERVER_NAME } from '../constants/default-server-name.constant.js';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Socket } from 'node:net';
+import { IncomingMessage, ServerResponse } from 'node:http';
+import { Duplex } from 'node:stream';
 import { WsRequestService } from './ws-request.service.js';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
@@ -49,9 +51,10 @@ export class ProxyService implements OnModuleInit {
      */
     onModuleInit(): void {
         const serverInstance = this.adapterHost.httpAdapter;
-        serverInstance.getHttpServer().on('upgrade', async (request, socket, head) => {
+        serverInstance.getHttpServer().on('upgrade', async (request: IncomingMessage, socket: Duplex, head: Buffer) => {
             try {
-                await this.handleWebSocketRequest(request, socket, head);
+                // Node emits the raw upgrade message; the websocket helpers read it as an Express request.
+                await this.handleWebSocketRequest(request as unknown as Request, socket as Socket, head);
             } catch (e) {
                 console.error(e);
             }
@@ -136,7 +139,7 @@ export class ProxyService implements OnModuleInit {
         }
     }
 
-    handleProxyError(error: Error, req: Request, res: Response): void {
+    handleProxyError(error: Error, req: Request, res: ServerResponse): void {
         if (res.writableEnded) {
             this.logger.error(`Error: ${error.message}`);
             return;
@@ -285,7 +288,7 @@ export class ProxyService implements OnModuleInit {
                 return this.directPrefixOwner[directPrefix];
             }
         }
-        let serverName: string;
+        let serverName: string | undefined;
         for (const prefix of this.prefixServers) {
             if (matchesPrefixSegment(url, prefix)) {
                 serverName = prefix;

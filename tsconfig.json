@@ -3,6 +3,8 @@
         "module": "nodenext",
         "moduleResolution": "nodenext",
         "target": "es2023",
+        "strictPropertyInitialization": false,
+        "types": ["node"],
         "lib": ["es2023"],
         "esModuleInterop": true,
         "allowSyntheticDefaultImports": true,
@@ -13,14 +15,13 @@
         "sourceMap": true,
         "skipLibCheck": true,
         "outDir": "./dist",
-        "baseUrl": "./",
         "incremental": true,
         "resolveJsonModule": true,
         "paths": {
-            "~*": ["src/*"],
-            "@hodfords/api-gateway": ["libs/api-gateway/index.ts"],
-            "@hodfords/api-gateway-client": ["libs/client/index.ts"],
-            "@hodfords/http-proxy": ["libs/http-proxy/index.ts"]
+            "~*": ["./src/*"],
+            "@hodfords/api-gateway": ["./libs/api-gateway/index.ts"],
+            "@hodfords/api-gateway-client": ["./libs/client/index.ts"],
+            "@hodfords/http-proxy": ["./libs/http-proxy/index.ts"]
         }
     },
     "include": ["libs", "src", "test"],

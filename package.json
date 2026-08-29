@@ -1,6 +1,6 @@
 {
     "name": "@hodfords/nestjs-api-gateway",
-    "version": "12.0.1",
+    "version": "12.1.0",
     "description": "The API Gateway houses the source code and documentation for the API Gateway - a powerful and versatile solution for managing and deploying APIs within a distributed and microservices-oriented architecture.",
     "author": "",
     "private": false,
@@ -14,7 +14,7 @@
     },
     "homepage": "https://opensource.hodfords.uk/",
     "scripts": {
-        "prebuild": "rimraf dist",
+        "prebuild": "rimraf dist *.tsbuildinfo",
         "postbuild": "sh ./scripts/postbuild.sh",
         "build": "nest build",
         "format": "prettier --write \"src/**/*.ts\" \"libs/**/*.ts\"",
@@ -68,7 +68,7 @@
         "rxjs": "7.8.2",
         "source-map-support": "0.5.21",
         "ts-loader": "9.5.4",
-        "typescript": "5.9.3",
+        "typescript": "6.0.3",
         "unplugin-swc": "^1.5.7",
         "vitest": "^4.1.10"
     },
@@ -78,11 +78,6 @@
         "axios": "*",
         "hbs": "*",
         "path-to-regexp": "*"
-    },
-    "overrides": {
-        "@nestjs/schematics": {
-            "typescript": "$typescript"
-        }
     },
     "type": "module",
     "engines": {

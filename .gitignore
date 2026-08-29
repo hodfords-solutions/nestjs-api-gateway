@@ -39,3 +39,5 @@ lerna-debug.log*
 .specify
 specs
 CLAUDE.md
+# TypeScript incremental build info (TS6 writes it next to tsconfig)
+*.tsbuildinfo

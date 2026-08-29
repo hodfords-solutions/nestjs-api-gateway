@@ -1,4 +1,5 @@
 import { Controller, Get, Req } from '@nestjs/common';
+import { Request } from 'express';
 import { OpenApiService } from '../libs/api-gateway/index.js';
 import { ApiRateLimit } from '../libs/client/index.js';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -28,7 +29,7 @@ export class AppController {
 
     @Get('oauth/metadata')
     @ApiRateLimit(5, 60, 200)
-    oauth(@Req() request): string {
+    oauth(@Req() request: Request): string {
         return 'Oauth: ' + request.url;
     }
 }

@@ -82,7 +82,7 @@ export class ThrottlerService implements OnModuleInit {
         }
         // Mark the request so a later checkLimitOfRequest call doesn't re-run the IP check.
         (request as any)[globalIpCheckedKey] = true;
-        const key = this.getGlobalIpKey(request.ip);
+        const key = this.getGlobalIpKey(this.getRequestIp(request));
         const expire = await this.getExpireAndIncreaseLimit(
             key,
             this.option.globalIpRateLimit,
@@ -134,7 +134,7 @@ export class ThrottlerService implements OnModuleInit {
         if (identity === skipThrottle) {
             return;
         }
-        const effectiveIdentity = identity ?? request.ip;
+        const effectiveIdentity = identity ?? this.getRequestIp(request);
 
         for (const rateLimit of routerDetail.rateLimits) {
             if (rateLimit.status === response.statusCode) {
@@ -159,13 +159,18 @@ export class ThrottlerService implements OnModuleInit {
         return `${RATE_LIMIT_KEY}-ip-${ip}`;
     }
 
+    /** `request.ip` is undefined when Express cannot resolve a remote address; keep those on one bucket. */
+    private getRequestIp(request: Request): string {
+        return request.ip ?? request.socket?.remoteAddress ?? 'unknown';
+    }
+
     getGlobalCustomKey(identity: string): string {
         return `${RATE_LIMIT_KEY}-custom-${identity}`;
     }
 
     private async resolveIdentity(routerDetail: RouterDetail, request: Request): Promise<ResolvedIdentity> {
         if (!this.option.keyResolver) {
-            return request.ip;
+            return this.getRequestIp(request);
         }
 
         const raw = await this.option.keyResolver({ request, routerDetail });

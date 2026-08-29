@@ -21,9 +21,10 @@ export function tracing(option: OpenTelemetryOptions) {
             getNodeAutoInstrumentations({
                 // eslint-disable-next-line @typescript-eslint/naming-convention
                 '@opentelemetry/instrumentation-http': {
-                    applyCustomAttributesOnSpan: (span, request: IncomingMessage, response) => {
+                    applyCustomAttributesOnSpan: (span, request, response) => {
                         const name: string = (span as unknown as ReadableSpan).name;
-                        if (name.endsWith('/{*splat}')) {
+                        // The hook also fires for outgoing ClientRequests; only inbound messages carry url + headers.
+                        if (name.endsWith('/{*splat}') && request instanceof IncomingMessage && request.url) {
                             const fullUrl = new URL(request.url, `https://${request.headers.host}`);
                             span.updateName(`${request.method} ${fullUrl.pathname}`);
                         }
