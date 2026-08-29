@@ -1,5 +1,5 @@
 import { HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
-import { DocumentType } from '../types/document.type.js';
+import { CamelCasedOperationType, DocumentType, OperationType } from '../types/document.type.js';
 import { RouterDetail, RouterPathType } from '../types/router-path.type.js';
 import { EndpointDetail } from '../types/endpoint-detail.type.js';
 import { match } from 'path-to-regexp';
@@ -62,7 +62,7 @@ export class OpenApiService {
         this.apiDocs[apiService.prefix] = this.getEndpointDetail(apiService.docUrl, response.data);
     }
 
-    getRouterDetail(serverName: string, method: string, url: string): RouterDetail {
+    getRouterDetail(serverName: string, method: string, url: string): RouterDetail | undefined {
         const routers = this.apiDocs[serverName].router[method.toLowerCase()];
         const path = getPathFromUrl(url);
         for (const router of routers) {
@@ -87,15 +87,16 @@ export class OpenApiService {
             search: []
         };
         for (const router in doc.paths) {
-            for (const method in doc.paths[router]) {
-                const apiDetail = camelcaseKeys(doc.paths[router][method]);
+            const operations = doc.paths[router] as Record<string, OperationType>;
+            for (const method in operations) {
+                const apiDetail = camelcaseKeys(operations[method]) as CamelCasedOperationType;
                 const patchMatch = match(apiDetail.xRouterPath || this.convertToExpressPath(router), {
                     decode: decodeURIComponent
                 });
 
-                paths[method].push({
+                paths[method as keyof RouterPathType].push({
                     operationId: apiDetail.operationId,
-                    description: apiDetail.description,
+                    description: apiDetail.description ?? '',
                     path: router,
                     isBearerAuth: this.checkRouterNeedBearerToken(apiDetail),
                     isApiKeyAuth: this.checkRouterNeedApiKey(apiDetail),
@@ -115,7 +116,7 @@ export class OpenApiService {
     }
 
     getExtraDetails(apiDetail: any): NodeJS.Dict<any> {
-        const extraDetail = {};
+        const extraDetail: NodeJS.Dict<any> = {};
         for (const key in apiDetail) {
             if (!['parameters', 'responses', 'xRateLimits', 'xRouterPath'].includes(key)) {
                 extraDetail[key] = apiDetail[key];
@@ -125,7 +126,7 @@ export class OpenApiService {
         return extraDetail;
     }
 
-    checkRouterNeedBearerToken(apiDetail): boolean {
+    checkRouterNeedBearerToken(apiDetail: any): boolean {
         if (!apiDetail.security) {
             return false;
         }
@@ -142,7 +143,7 @@ export class OpenApiService {
         return false;
     }
 
-    checkRouterNeedApiKey(apiDetail): boolean {
+    checkRouterNeedApiKey(apiDetail: any): boolean {
         if (!apiDetail.security) {
             return false;
         }
@@ -222,17 +223,19 @@ export class OpenApiService {
     removeHeader(document: any) {
         for (const path in document.paths) {
             for (const method in document.paths[path]) {
-                document.paths[path][method].parameters = document.paths[path][method].parameters.filter((param) => {
-                    return (
-                        param.in !== 'header' ||
-                        !this.apiGatewayOption.excludeHeaders.includes(param.name.toLowerCase())
-                    );
-                });
+                document.paths[path][method].parameters = document.paths[path][method].parameters.filter(
+                    (param: any) => {
+                        return (
+                            param.in !== 'header' ||
+                            !this.apiGatewayOption.excludeHeaders.includes(param.name.toLowerCase())
+                        );
+                    }
+                );
             }
         }
     }
 
-    removeSecuritySchemes(securitySchemes): void {
+    removeSecuritySchemes(securitySchemes: NodeJS.Dict<any>): void {
         for (const key in securitySchemes) {
             if (key.startsWith('auth-')) {
                 delete securitySchemes[key];

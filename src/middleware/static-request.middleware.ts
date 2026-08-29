@@ -4,6 +4,6 @@ import { ProxyValidation, ProxyValidationHandler } from '../../libs/api-gateway/
 @ProxyValidation()
 export class StaticRequestMiddleware implements ProxyValidationHandler {
     isStaticRequest(request: IncomingMessage): boolean {
-        return request.url.includes('/images/') || request.url.includes('/statics/');
+        return !!request.url && (request.url.includes('/images/') || request.url.includes('/statics/'));
     }
 }

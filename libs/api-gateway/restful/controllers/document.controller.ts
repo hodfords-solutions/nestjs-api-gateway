@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, Query, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiOperation } from '@nestjs/swagger';
 import { OpenApiService } from '../services/open-api.service.js';
 import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
@@ -13,7 +14,7 @@ export class DocumentController {
 
     @Get('documents')
     @ApiOperation({ description: 'Get the Swagger document.' })
-    async getDocument(@Res() response): Promise<any> {
+    async getDocument(@Res() response: Response): Promise<any> {
         return response.render(
             this.apiGatewayOption.libraryPath + '/views/document.hbs',
             this.openApiService.getDocumentDetailsForUI()

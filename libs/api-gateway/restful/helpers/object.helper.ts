@@ -25,8 +25,9 @@ function toKebabKey(key: string): string {
  */
 export function kebabConvertKeys<T>(object: object): T {
     const newObject: any = {};
-    for (const key in object) {
-        newObject[toKebabKey(key)] = object[key];
+    const source = object as Record<string, unknown>;
+    for (const key in source) {
+        newObject[toKebabKey(key)] = source[key];
     }
     return newObject;
 }

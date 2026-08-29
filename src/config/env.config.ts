@@ -41,7 +41,7 @@ export const env = {
     APP_PORT: Number(process.env.APP_PORT) || 3000, //API Gateway Port
     API_SERVICES: apiServices, //Microservices which the gateway invokes and aggregates their results.
     REDIS: {
-        HOST: process.env.REDIS_HOST, //Redis host
+        HOST: process.env.REDIS_HOST || 'localhost', //Redis host
         PORT: Number(process.env.REDIS_PORT || '6379'), //Redis port
         DB: Number(process.env.REDIS_DB || '0'), //Redis DB
         USERNAME: process.env.REDIS_USERNAME, //Redis username (ACL)
