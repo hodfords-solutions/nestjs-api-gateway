@@ -41,6 +41,9 @@
     ],
     "ignorePaths": [
         "node_modules/**",
-        "src/migration"
+        "src/migration",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "pnpm-workspace.yaml"
     ]
 }
