@@ -6,6 +6,8 @@ on:
 jobs:
   lint:
     uses: hodfords-solutions/actions/.github/workflows/lint.yaml@main
+    with:
+      package_manager: pnpm
 
   detect-changes:
     runs-on: ubuntu-latest
@@ -47,6 +49,7 @@ jobs:
     uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
     with:
       build_path: dist/libs/api-gateway
+      package_manager: pnpm
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -56,6 +59,7 @@ jobs:
     uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
     with:
       build_path: dist/libs/client
+      package_manager: pnpm
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
@@ -65,6 +69,7 @@ jobs:
     uses: hodfords-solutions/actions/.github/workflows/publish.yaml@main
     with:
       build_path: dist/libs/opentelemetry
+      package_manager: pnpm
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
