@@ -5,20 +5,8 @@
   "compilerOptions": {
     "assets": [
       {
-        "include": "**/*.hbs",
-        "watchAssets": true
-      },
-      {
         "include": "../libs/**/*.hbs",
-        "outDir": "dist/libs",
-        "watchAssets": true
-      },
-      {
-        "include": "statics/*",
-        "watchAssets": true
-      },
-      {
-        "include": "i18n/**/*",
+        "outDir": "dist",
         "watchAssets": true
       }
     ]
