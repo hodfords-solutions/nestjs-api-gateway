@@ -13,6 +13,9 @@
         "url": "https://github.com/hodfords-solutions/nestjs-api-gateway/issues"
     },
     "homepage": "https://opensource.hodfords.uk/",
+    "publishConfig": {
+        "tag": "v11"
+    },
     "scripts": {
         "prebuild": "rimraf dist",
         "postbuild": "sh ./scripts/postbuild.sh",
