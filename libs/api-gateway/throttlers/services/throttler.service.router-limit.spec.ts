@@ -116,6 +116,25 @@ describe('ThrottlerService per-router rate limits', () => {
         expect(redis.counts.get(key)).toBe(1);
     });
 
+    it('increaseRouterLimit is a no-op when throttling is disabled', async () => {
+        const redis = createRedisMock();
+        const service = await bootService({ ...baseOption, isEnable: false }, redis);
+        const statusRouter: RouterDetail = { ...routerDetail, rateLimits: [{ limit: 2, ttl: 60, status: 401 }] };
+        const request = makeRequest();
+        // Express's `ip` getter throws once undici has destroyed the proxied body and nulled its socket.
+        Object.defineProperty(request, 'ip', {
+            get: () => {
+                throw new TypeError("Cannot read properties of null (reading 'remoteAddress')");
+            }
+        });
+
+        await service.checkLimitOfRequest(statusRouter, request);
+        await expect(
+            service.increaseRouterLimit(statusRouter, request, { statusCode: 401 } as Response)
+        ).resolves.toBeUndefined();
+        expect(redis.evalsha).not.toHaveBeenCalled();
+    });
+
     it('a status-scoped limit blocks further requests after enough matching responses', async () => {
         const redis = createRedisMock();
         const service = await bootService(baseOption, redis);
