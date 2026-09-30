@@ -130,6 +130,10 @@ export class ThrottlerService implements OnModuleInit {
     }
 
     async increaseRouterLimit(routerDetail: RouterDetail, request: Request, response: Response): Promise<void> {
+        if (!this.option.isEnable) {
+            return;
+        }
+
         const identity = (request as any)[resolvedIdentityKey] as ResolvedIdentity | undefined;
         if (identity === skipThrottle) {
             return;
