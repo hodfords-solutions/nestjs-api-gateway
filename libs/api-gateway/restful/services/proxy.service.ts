@@ -49,7 +49,10 @@ export class ProxyService implements OnModuleInit {
      */
     onModuleInit(): void {
         const serverInstance = this.adapterHost.httpAdapter;
-        serverInstance.getHttpServer().on('upgrade', async (request, socket, head) => {
+        serverInstance.getHttpServer().on('upgrade', async (request, socket: Socket, head) => {
+            // Node removes the HTTP server's error listener before handing the socket over, so
+            // without one a client resetting mid-handshake or mid-tunnel crashes the process.
+            socket.on('error', (error) => this.logger.debug(`WebSocket client socket error: ${error.message}`));
             try {
                 await this.handleWebSocketRequest(request, socket, head);
             } catch (e) {
