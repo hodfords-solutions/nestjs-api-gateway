@@ -97,6 +97,11 @@ export class ProxySocket {
             this.socket.end();
         });
 
+        // pipe() forwards a clean end but not an error, so a reset on either side has to tear
+        // down the other explicitly or that half of the tunnel stays open.
+        proxySocket.on('error', () => this.socket.destroy());
+        this.socket.on('error', () => proxySocket.destroy());
+
         // Node's HTTP parser reads in whole chunks, so bytes belonging to the upgraded
         // protocol can be consumed along with the handshake and handed over as a head
         // buffer. They are already out of the stream, so piping alone would drop them —

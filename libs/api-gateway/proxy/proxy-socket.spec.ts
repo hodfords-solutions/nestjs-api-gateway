@@ -166,6 +166,7 @@ describe('ProxySocket upstream idle timer', () => {
         const proxySocket = { on: jest.fn(), setTimeout: jest.fn(), unshift: jest.fn(), pipe: jest.fn() };
         proxySocket.pipe.mockReturnValue({ pipe: jest.fn() });
         const clientSocket = {
+            on: jest.fn(),
             write: jest.fn(),
             unshift: jest.fn(),
             pipe: jest.fn().mockReturnValue({ pipe: jest.fn() })
