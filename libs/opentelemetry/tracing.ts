@@ -5,7 +5,7 @@ import { resourceFromAttributes } from '@opentelemetry/resources';
 import { ATTR_SERVICE_NAME } from '@opentelemetry/semantic-conventions';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { IncomingMessage } from 'http';
-import { ReadableSpan } from '@opentelemetry/sdk-trace-node';
+import { ReadableSpan } from '@opentelemetry/sdk-trace';
 
 export function tracing(option: OpenTelemetryOptions) {
     const traceExporter = new OTLPTraceExporter({
