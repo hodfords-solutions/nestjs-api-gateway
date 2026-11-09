@@ -260,7 +260,16 @@ export class ProxyService implements OnModuleInit {
         await this.throttlerService.checkGlobalIpRequest(request);
 
         const proxyRequest = new ProxyRequest();
-        if (!(await this.requestService.handle(routerDetail, request, proxyRequest))) {
+        let isAllowed: boolean;
+        try {
+            isAllowed = await this.requestService.handle(routerDetail, request, proxyRequest);
+        } catch (error) {
+            // A request rejected by the middlewares never reaches checkLimitOfRequest; count it as anonymous.
+            await this.throttlerService.checkAnonymousIpRequest(request);
+            throw error;
+        }
+        if (!isAllowed) {
+            await this.throttlerService.checkAnonymousIpRequest(request);
             throw new ForbiddenException();
         }
         await this.throttlerService.checkLimitOfRequest(routerDetail, request);

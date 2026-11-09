@@ -6,14 +6,25 @@ import { RateLimit, RouterDetail } from '../../restful/types/router-path.type.js
 import { LUA_INCREASE_AND_GET_SCRIPT } from '../constants/lua-script.constant.js';
 import { RATE_LIMIT_KEY, THROTTLER_OPTION } from '../constants/rate-limit.constant.js';
 import { TooManyRequestException } from '../exceptions/too-many-request.exception.js';
-import { ThrottlerOption } from '../types/throttler-option.type.js';
+import { ThrottlerKeyResolverResult, ThrottlerOption } from '../types/throttler-option.type.js';
 import { REDIS_OPTION } from '../../redis/constants/redis.constant.js';
+import { assertValidIpv6Subnet, DEFAULT_IPV6_SUBNET, normalizeIp } from '../helpers/ip.helper.js';
 
 const resolvedIdentityKey = Symbol('throttler.resolvedIdentity');
 const globalIpCheckedKey = Symbol('throttler.globalIpChecked');
+const anonymousIpCheckedKey = Symbol('throttler.anonymousIpChecked');
 const skipThrottle = Symbol('throttler.skip');
 
 type ResolvedIdentity = string | typeof skipThrottle;
+
+type ResolvedRequest = {
+    identity: ResolvedIdentity;
+    authenticated: boolean;
+};
+
+function isPositiveNumber(value: unknown): boolean {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
 
 function isEmptyKey(value: unknown): boolean {
     if (value === null || value === undefined) {
@@ -26,10 +37,28 @@ function isEmptyKey(value: unknown): boolean {
 export class ThrottlerService implements OnModuleInit {
     private luaSha: string;
 
+    private readonly ipv6Subnet: number;
+
     constructor(
         @Inject(THROTTLER_OPTION) private option: ThrottlerOption,
         @Inject(REDIS_OPTION) private readonly redis: Redis
-    ) {}
+    ) {
+        const hasAnonymousLimit = option.anonymousIpRateLimit !== undefined;
+        const hasAnonymousTtl = option.anonymousIpRateLimitTTL !== undefined;
+        if (hasAnonymousLimit !== hasAnonymousTtl) {
+            throw new Error('ThrottlerOption.anonymousIpRateLimit and anonymousIpRateLimitTTL must be set together.');
+        }
+        if (
+            hasAnonymousLimit &&
+            !(isPositiveNumber(option.anonymousIpRateLimit) && isPositiveNumber(option.anonymousIpRateLimitTTL))
+        ) {
+            throw new Error(
+                'ThrottlerOption.anonymousIpRateLimit and anonymousIpRateLimitTTL must be positive numbers.'
+            );
+        }
+        this.ipv6Subnet = option.ipv6Subnet ?? DEFAULT_IPV6_SUBNET;
+        assertValidIpv6Subnet(this.ipv6Subnet);
+    }
 
     async onModuleInit(): Promise<any> {
         await this.loadLuaScript();
@@ -60,8 +89,15 @@ export class ThrottlerService implements OnModuleInit {
             await this.checkGlobalIpRequest(request);
         }
 
-        const identity = await this.resolveIdentity(routerDetail, request);
+        const { identity, authenticated } = await this.resolveIdentity(routerDetail, request);
         (request as any)[resolvedIdentityKey] = identity;
+
+        // The anonymous IP bucket needs the identity, so it runs after the resolver and only for
+        // unauthenticated requests. Authenticated users sharing one (NAT) address are bounded by the
+        // per-identity custom limit instead.
+        if (!authenticated) {
+            await this.checkAnonymousIpRequest(request);
+        }
 
         if (identity === skipThrottle) {
             return;
@@ -73,6 +109,33 @@ export class ThrottlerService implements OnModuleInit {
             for (const rateLimit of routerDetail.rateLimits) {
                 await this.checkRouterRequest(routerDetail, request, rateLimit, identity);
             }
+        }
+    }
+
+    /**
+     * Count a request against the anonymous IP bucket (`anonymousIpRateLimit`), at most once per
+     * request. No-op when the bucket is not configured or throttling is disabled.
+     *
+     * The proxy also calls this when a proxy middleware rejects the request (returns `false` or
+     * throws, e.g. an invalid token): such requests never reach `checkLimitOfRequest`, and a request
+     * whose authentication failed is anonymous by definition, so failed-auth floods stay capped.
+     */
+    async checkAnonymousIpRequest(request: Request): Promise<void> {
+        if (!this.option.isEnable || this.option.anonymousIpRateLimit === undefined) {
+            return;
+        }
+        if ((request as any)[anonymousIpCheckedKey]) {
+            return;
+        }
+        (request as any)[anonymousIpCheckedKey] = true;
+        const key = this.getAnonymousIpKey(this.getRequestIp(request));
+        const expire = await this.getExpireAndIncreaseLimit(
+            key,
+            this.option.anonymousIpRateLimit,
+            this.option.anonymousIpRateLimitTTL!
+        );
+        if (expire > 0) {
+            throw new TooManyRequestException();
         }
     }
 
@@ -163,32 +226,55 @@ export class ThrottlerService implements OnModuleInit {
         return `${RATE_LIMIT_KEY}-ip-${ip}`;
     }
 
-    /** `request.ip` is undefined when Express cannot resolve a remote address; keep those on one bucket. */
-    private getRequestIp(request: Request): string {
-        return request.ip ?? request.socket?.remoteAddress ?? 'unknown';
+    getAnonymousIpKey(ip: string): string {
+        return `${RATE_LIMIT_KEY}-anonymous-ip-${ip}`;
+    }
+
+    /**
+     * The client address used for every IP-based key, normalised so equivalent addresses share a
+     * bucket (IPv4-mapped prefix stripped, IPv6 masked to `ipv6Subnet`). `request.ip` is undefined
+     * when Express cannot resolve a remote address; those all share one `unknown` bucket.
+     */
+    getRequestIp(request: Request): string {
+        const ip = request.ip ?? request.socket?.remoteAddress;
+        return ip ? normalizeIp(ip, this.ipv6Subnet) : 'unknown';
     }
 
     getGlobalCustomKey(identity: string): string {
         return `${RATE_LIMIT_KEY}-custom-${identity}`;
     }
 
-    private async resolveIdentity(routerDetail: RouterDetail, request: Request): Promise<ResolvedIdentity> {
+    private async resolveIdentity(routerDetail: RouterDetail, request: Request): Promise<ResolvedRequest> {
+        const ip = this.getRequestIp(request);
         if (!this.option.keyResolver) {
-            return this.getRequestIp(request);
+            return { identity: ip, authenticated: false };
         }
 
-        const raw = await this.option.keyResolver({ request, routerDetail });
+        const raw: ThrottlerKeyResolverResult = await this.option.keyResolver({ request, routerDetail, ip });
 
-        if (isEmptyKey(raw)) {
-            return skipThrottle;
+        let key: unknown = raw;
+        let authenticated = false;
+        if (raw !== null && typeof raw === 'object') {
+            key = raw.key;
+            if (raw.authenticated !== undefined && typeof raw.authenticated !== 'boolean') {
+                throw new Error(
+                    `ThrottlerOption.keyResolver: 'authenticated' must be a boolean when set. Received: ${typeof raw.authenticated}`
+                );
+            }
+            authenticated = raw.authenticated === true;
         }
 
-        if (typeof raw !== 'string') {
+        if (isEmptyKey(key)) {
+            return { identity: skipThrottle, authenticated };
+        }
+
+        if (typeof key !== 'string') {
             throw new Error(
-                `ThrottlerOption.keyResolver must return a string, null, or undefined. Received: ${typeof raw}`
+                'ThrottlerOption.keyResolver must return a string, null, undefined, or { key, authenticated }. ' +
+                    `Received key of type: ${typeof key}`
             );
         }
 
-        return raw;
+        return { identity: key, authenticated };
     }
 }
