@@ -13,8 +13,7 @@ export type ThrottlerKeyResolverContext = {
 
 /**
  * Object form of a `keyResolver` result. Lets the resolver say whether the request is
- * authenticated, which `globalIpRateLimitScope: 'anonymous'` uses to decide whether the
- * global IP bucket applies.
+ * authenticated, which decides whether the anonymous IP bucket (`anonymousIpRateLimit`) applies.
  */
 export type ThrottlerIdentity = {
     /** Bucket identity. An empty value (`null`, `undefined`, blank string) skips the custom and per-route limits. */
@@ -29,15 +28,6 @@ export type ThrottlerKeyResolver = (
     context: ThrottlerKeyResolverContext
 ) => ThrottlerKeyResolverResult | Promise<ThrottlerKeyResolverResult>;
 
-/**
- * - `'all'` (default): every request counts against the global IP bucket, checked before the
- *   proxy middlewares run.
- * - `'anonymous'`: only requests that are not authenticated (per `keyResolver`'s
- *   `{ authenticated: true }`) count against it. Authenticated traffic is bounded by the custom
- *   (per-identity) limit instead, so many users behind one NAT address don't share a bucket.
- */
-export type ThrottlerGlobalIpRateLimitScope = 'all' | 'anonymous';
-
 export type ThrottlerOption = {
     globalIpRateLimit: number;
     globalIpRateLimitTTL: number;
@@ -45,8 +35,15 @@ export type ThrottlerOption = {
     globalCustomRateLimitTTL: number;
     isEnable: boolean;
     keyResolver?: ThrottlerKeyResolver;
-    /** Which requests the global IP bucket applies to. Default `'all'`. */
-    globalIpRateLimitScope?: ThrottlerGlobalIpRateLimitScope;
+    /**
+     * Optional second per-IP bucket that only counts unauthenticated requests (and requests rejected
+     * by a proxy middleware). Runs alongside `globalIpRateLimit`, which counts all traffic, so the
+     * all-traffic ceiling can stay high enough for a shared NAT address while anonymous traffic gets
+     * a tighter limit. A request is authenticated when `keyResolver` returns `{ authenticated: true }`.
+     * Set both fields or neither.
+     */
+    anonymousIpRateLimit?: number;
+    anonymousIpRateLimitTTL?: number;
     /**
      * Prefix length IPv6 client addresses are masked to before being used in an IP-based key.
      * Default `64`. Use `128` to bucket each IPv6 address separately.

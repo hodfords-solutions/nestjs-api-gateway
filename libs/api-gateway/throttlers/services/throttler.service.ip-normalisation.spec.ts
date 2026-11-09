@@ -138,10 +138,12 @@ describe('ThrottlerService IP normalisation', () => {
 
     describe('option validation', () => {
         it.each([
+            ['anonymousIpRateLimit without its TTL', { anonymousIpRateLimit: 10 }, /set together/],
+            ['anonymousIpRateLimitTTL without its limit', { anonymousIpRateLimitTTL: 60 }, /set together/],
             [
-                'an unknown globalIpRateLimitScope',
-                { globalIpRateLimitScope: 'authenticated' },
-                /globalIpRateLimitScope/
+                'a non-positive anonymousIpRateLimit',
+                { anonymousIpRateLimit: 0, anonymousIpRateLimitTTL: 60 },
+                /positive numbers/
             ],
             ['an out-of-range ipv6Subnet', { ipv6Subnet: 0 }, /ipv6Subnet/]
         ])('throws on %s', async (_label, extra, message) => {
