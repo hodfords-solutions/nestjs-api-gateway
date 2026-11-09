@@ -165,15 +165,52 @@ index(): string {
 ```
 
 #### Global rate limits
-The throttler enforces two independent global limits on every request:
+The throttler enforces two independent global limits:
 
-- **`globalIpRateLimit` / `globalIpRateLimitTTL`** — always bucketed by `request.ip`. This is a DDoS / abuse baseline that does **not** go through `keyResolver` and is **not** skipped when the resolver returns an empty value.
-- **`globalCustomRateLimit` / `globalCustomRateLimitTTL`** — bucketed by whatever `keyResolver` returns (or `request.ip` if no resolver is configured). Skipped entirely when the resolver returns an empty value.
+- **`globalIpRateLimit` / `globalIpRateLimitTTL`** — bucketed by the client IP (see [IP normalisation](#ip-normalisation)). This is a DDoS / abuse baseline that does **not** use the `keyResolver` key and is **not** skipped when the resolver returns an empty value. Which requests it applies to is controlled by `globalIpRateLimitScope`.
+- **`globalCustomRateLimit` / `globalCustomRateLimitTTL`** — bucketed by whatever `keyResolver` returns (or the client IP if no resolver is configured). Skipped entirely when the resolver returns an empty value.
 
 A request is rejected as soon as either limit is exceeded.
 
+#### Global IP limit scope
+`globalIpRateLimitScope` (default `'all'`) decides which requests count against the global IP bucket:
+
+| Scope | Behaviour |
+| --- | --- |
+| `'all'` (default) | Every request counts, checked **before** the proxy middlewares (authentication) run. Unchanged from previous versions. |
+| `'anonymous'` | Identity is resolved first; only requests that are **not authenticated** count. Requests rejected by a proxy middleware (returning `false` or throwing, e.g. a bad token) also count, since their identity was never established. |
+
+Use `'anonymous'` when many users share one public IP (corporate NAT, VPN egress, mobile carrier CGNAT): with `'all'` they all drain one IP bucket, so one busy office can lock everyone out. With `'anonymous'`, authenticated traffic is bounded by the per-identity custom limit instead, and the IP bucket stays a flood ceiling for unauthenticated traffic.
+
+A request is authenticated only when `keyResolver` says so by returning an object `{ key, authenticated: true }`. A plain string result (and having no resolver at all) is treated as anonymous, so turning the scope on without updating the resolver keeps the old behaviour.
+
+```typescript
+throttler: {
+    globalIpRateLimit: 1000,
+    globalIpRateLimitTTL: 60,
+    globalCustomRateLimit: 240,
+    globalCustomRateLimitTTL: 60,
+    isEnable: true,
+    globalIpRateLimitScope: 'anonymous',
+    keyResolver: ({ request, ip }) => {
+        const userId = (request as any).authUserId; // set by your authentication ProxyMiddleware
+        return userId ? { key: `user:${userId}`, authenticated: true } : `ip:${ip}`;
+    }
+}
+```
+
+> Only mark a request `authenticated` from state your own authentication middleware verified (never from a raw client header), otherwise a client can opt itself out of the IP limit.
+
+#### IP normalisation
+Every IP-based key (the global IP bucket, and the IP fallback identity used by the custom and per-endpoint limits) uses a normalised client address:
+
+- IPv4-mapped IPv6 addresses (`::ffff:203.0.113.7`) are reduced to the IPv4 address (`203.0.113.7`).
+- IPv6 addresses are masked to their `/64` prefix (`2001:db8:1:2::abcd` → `2001:db8:1:2:0:0:0:0/64`). A /64 is the smallest block normally assigned to one subscriber, so a client cannot dodge a per-IP limit by rotating through its own addresses. Set `ipv6Subnet` (1–128) to change the prefix length; `128` keeps one bucket per address.
+
+The client address is taken from `request.ip`, so configure Express `trust proxy` when the gateway runs behind a load balancer. The normalised address is passed to `keyResolver` as `ip`; prefer it over `request.ip` when building IP-based keys.
+
 #### Custom rate-limit key
-By default the custom limit buckets requests by `request.ip`. To bucket by something else (authenticated user id, tenant id, API key, etc.), supply a `keyResolver` callback in the throttler options. The callback receives `{ request, routerDetail }` and returns the string to use as the bucket identity.
+By default the custom limit buckets requests by `request.ip`. To bucket by something else (authenticated user id, tenant id, API key, etc.), supply a `keyResolver` callback in the throttler options. The callback receives `{ request, routerDetail, ip }` (`ip` is the [normalised](#ip-normalisation) client address) and returns the string to use as the bucket identity, or `{ key, authenticated }` (see [Global IP limit scope](#global-ip-limit-scope)).
 
 ```typescript
 ApiGatewayModule.forRoot({
@@ -184,17 +221,17 @@ ApiGatewayModule.forRoot({
         globalCustomRateLimit: 60,
         globalCustomRateLimitTTL: 60,
         isEnable: true,
-        keyResolver: ({ request }) => {
+        keyResolver: ({ request, ip }) => {
             const userId = request.headers['auth-user-id'];
             return typeof userId === 'string' && userId.length > 0
                 ? `user:${userId}`
-                : `ip:${request.ip}`;
+                : `ip:${ip}`;
         }
     }
 })
 ```
 
-**Skip the custom limit for selected requests** by returning an empty value (`null`, `undefined`, `''`, or a whitespace-only string). The throttler then bypasses both the custom global limit and any per-endpoint `@ApiRateLimit` rules without incrementing their counters. The IP-based global limit still applies.
+**Skip the custom limit for selected requests** by returning an empty value (`null`, `undefined`, `''`, or a whitespace-only string). The throttler then bypasses both the custom global limit and any per-endpoint `@ApiRateLimit` rules without incrementing their counters. The IP-based global limit still applies (with scope `'anonymous'`, unless the result is `{ key: null, authenticated: true }`).
 
 ```typescript
 keyResolver: ({ request, routerDetail }) => {
@@ -205,7 +242,7 @@ keyResolver: ({ request, routerDetail }) => {
 }
 ```
 
-The same identity is used for the custom global limit and for any per-endpoint `@ApiRateLimit` rule. Resolvers may be asynchronous. If the resolver throws, the error propagates through the gateway's existing exception pipeline (no silent allow, no silent deny). If `keyResolver` is omitted, the custom limit falls back to `request.ip` (matching the IP limit's bucketing key). See `specs/002-throttler-key-callback/quickstart.md` for the full walkthrough.
+The same identity is used for the custom global limit and for any per-endpoint `@ApiRateLimit` rule. Resolvers may be asynchronous. If the resolver throws, the error propagates through the gateway's existing exception pipeline (no silent allow, no silent deny). If `keyResolver` is omitted, the custom limit falls back to the normalised client IP (matching the IP limit's bucketing key). See `specs/002-throttler-key-callback/quickstart.md` for the full walkthrough.
 
 ## Support:
 

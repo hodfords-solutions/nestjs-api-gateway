@@ -255,12 +255,21 @@ export class ProxyService implements OnModuleInit {
             throw new MethodNotAllowedException();
         }
 
-        // Apply the global IP ceiling before auth so unauthenticated/forbidden floods are capped too.
-        // It marks the request, so checkLimitOfRequest below won't re-run it (no double-count).
-        await this.throttlerService.checkGlobalIpRequest(request);
+        // Scope 'all': apply the global IP ceiling before auth so unauthenticated/forbidden floods are
+        // capped too. It marks the request, so checkLimitOfRequest below won't re-run it (no double-count).
+        // Scope 'anonymous': no-op here; the check runs once the identity is known.
+        await this.throttlerService.checkGlobalIpRequestBeforeAuth(request);
 
         const proxyRequest = new ProxyRequest();
-        if (!(await this.requestService.handle(routerDetail, request, proxyRequest))) {
+        let isAllowed: boolean;
+        try {
+            isAllowed = await this.requestService.handle(routerDetail, request, proxyRequest);
+        } catch (error) {
+            await this.throttlerService.checkGlobalIpRequestOnAuthFailure(request);
+            throw error;
+        }
+        if (!isAllowed) {
+            await this.throttlerService.checkGlobalIpRequestOnAuthFailure(request);
             throw new ForbiddenException();
         }
         await this.throttlerService.checkLimitOfRequest(routerDetail, request);
