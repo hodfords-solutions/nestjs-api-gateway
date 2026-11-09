@@ -12,4 +12,5 @@ export * from './restful/models/proxy-request.model.js';
 export * from './restful/services/open-api.service.js';
 export * from './throttlers/exceptions/too-many-request.exception.js';
 export * from './throttlers/types/throttler-option.type.js';
+export { DEFAULT_IPV6_SUBNET, normalizeIp } from './throttlers/helpers/ip.helper.js';
 export * from './mcp/index.js';
