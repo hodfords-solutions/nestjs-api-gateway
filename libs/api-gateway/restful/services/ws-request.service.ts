@@ -7,6 +7,7 @@ import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 import { WsProxyMiddlewareHandler } from '../interfaces/ws-proxy-middleware.interface.js';
 import { WS_PROXY_MIDDLEWARE } from '../decorators/ws-proxy-middleware.decorator.js';
 import { ProxyRequest } from '../models/proxy-request.model.js';
+import { stripExcludedHeaders } from '../helpers/request-sanitizer.helper.js';
 
 @Injectable()
 export class WsRequestService implements OnModuleInit {
@@ -22,7 +23,7 @@ export class WsRequestService implements OnModuleInit {
     }
 
     async handle(request: IncomingMessage, proxyRequest: ProxyRequest) {
-        this.removeHeaders(proxyRequest);
+        this.removeHeaders(request, proxyRequest);
         for (const handler of this.headerHandlers) {
             if (!(await handler.handle(request, proxyRequest))) {
                 return false;
@@ -32,11 +33,16 @@ export class WsRequestService implements OnModuleInit {
         return true;
     }
 
-    private removeHeaders(proxyRequest: ProxyRequest) {
+    /**
+     * Remove gateway-owned headers from the incoming upgrade request (which is forwarded as-is)
+     * and from anything already staged on the proxy request.
+     * @param {IncomingMessage} request The incoming request
+     * @param {ProxyRequest} proxyRequest The outgoing header overrides
+     */
+    private removeHeaders(request: IncomingMessage, proxyRequest: ProxyRequest) {
+        stripExcludedHeaders(request, this.apiGatewayOption.excludeHeaders);
         for (const excludeHeader of this.apiGatewayOption.excludeHeaders) {
-            if (proxyRequest.headers[excludeHeader]) {
-                proxyRequest.headers[excludeHeader] = '';
-            }
+            delete proxyRequest.headers[excludeHeader];
         }
     }
 }

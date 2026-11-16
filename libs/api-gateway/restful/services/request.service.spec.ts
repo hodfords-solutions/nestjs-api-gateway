@@ -42,7 +42,7 @@ describe('RequestService.handle', () => {
         expect(second).not.toHaveBeenCalled();
     });
 
-    it('blanks excluded headers that are already present on the proxy request', async () => {
+    it('drops excluded headers that are already present on the proxy request', async () => {
         const service = createService(['auth-user-id']);
         const proxyRequest = new ProxyRequest();
         proxyRequest.addHeader('auth-user-id', 'spoofed');
@@ -50,8 +50,45 @@ describe('RequestService.handle', () => {
 
         await service.handle(routerDetail, request, proxyRequest);
 
-        expect(proxyRequest.headers['auth-user-id']).toBe('');
-        expect(proxyRequest.headers['x-keep']).toBe('yes');
+        expect(proxyRequest.headers).toEqual({ 'x-keep': 'yes' });
+    });
+
+    it('strips caller-supplied excluded headers from the incoming request before handlers run', async () => {
+        const service = createService(['auth-user-id']);
+        const incoming = { headers: { 'auth-user-id': 'spoofed', 'x-keep': 'yes' } } as unknown as IncomingMessage;
+        const seen: unknown[] = [];
+        asInternal(service).headerHandlers = [
+            {
+                handle: vi.fn(async (_detail: RouterDetail, req: IncomingMessage) => {
+                    seen.push({ ...req.headers });
+                    return true;
+                })
+            }
+        ];
+
+        await service.handle(routerDetail, incoming, new ProxyRequest());
+
+        expect(incoming.headers).toEqual({ 'x-keep': 'yes' });
+        expect(seen).toEqual([{ 'x-keep': 'yes' }]);
+    });
+
+    it('keeps an identity header a middleware sets after the strip', async () => {
+        const service = createService(['auth-user-id']);
+        const incoming = { headers: { 'auth-user-id': 'spoofed' } } as unknown as IncomingMessage;
+        asInternal(service).headerHandlers = [
+            {
+                handle: vi.fn(async (_detail: RouterDetail, _req: IncomingMessage, proxyRequest: ProxyRequest) => {
+                    proxyRequest.addHeader('auth-user-id', 'trusted');
+                    return true;
+                })
+            }
+        ];
+        const proxyRequest = new ProxyRequest();
+
+        await service.handle(routerDetail, incoming, proxyRequest);
+
+        expect(incoming.headers['auth-user-id']).toBeUndefined();
+        expect(proxyRequest.headers['auth-user-id']).toBe('trusted');
     });
 });
 

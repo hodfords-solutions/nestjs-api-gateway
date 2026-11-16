@@ -38,12 +38,20 @@ describe('WsRequestService.handle', () => {
         expect(proxyRequest.headers.authUserId).toBe('123');
     });
 
-    it('blanks excluded headers that are already present on the proxy request', async () => {
+    it('drops excluded headers that are already present on the proxy request', async () => {
         const service = createService(['auth-user-id']);
         const proxyRequest = new ProxyRequest();
         proxyRequest.addHeader('auth-user-id', 'spoofed');
 
         await service.handle(request, proxyRequest);
-        expect(proxyRequest.headers['auth-user-id']).toBe('');
+        expect(proxyRequest.headers['auth-user-id']).toBeUndefined();
+    });
+
+    it('strips caller-supplied excluded headers from the upgrade request itself', async () => {
+        const service = createService(['auth-user-id']);
+        const incoming = { headers: { 'auth-user-id': 'spoofed', upgrade: 'websocket' } } as unknown as IncomingMessage;
+
+        await service.handle(incoming, new ProxyRequest());
+        expect(incoming.headers).toEqual({ upgrade: 'websocket' });
     });
 });

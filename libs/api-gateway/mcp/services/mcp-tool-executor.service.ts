@@ -10,6 +10,7 @@ import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 import { Pool, Dispatcher } from 'undici';
 import { IncomingMessage } from 'http';
 import RequestOptions = Dispatcher.RequestOptions;
+import { omitExcludedHeaders } from '../../restful/helpers/request-sanitizer.helper.js';
 
 @Injectable()
 export class McpToolExecutorService {
@@ -96,7 +97,12 @@ export class McpToolExecutorService {
         proxyRequest: ProxyRequest
     ): RequestOptions {
         const { path, query, body, headers } = this.extractRequestParts(tool, args);
-        const customHeaders = { ...proxyRequest.getKebabHeaders(), ...headers };
+        // Tool arguments are caller-controlled: they must never carry a gateway-owned header,
+        // and headers set by gateway middleware always win over them.
+        const customHeaders = {
+            ...omitExcludedHeaders(headers, this.apiGatewayOption.excludeHeaders),
+            ...proxyRequest.getKebabHeaders()
+        };
 
         const requestHeaders = new Map<string, string | string[]>();
         requestHeaders.set('content-type', 'application/json');

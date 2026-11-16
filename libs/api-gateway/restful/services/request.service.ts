@@ -10,6 +10,7 @@ import { API_GATEWAY_OPTION } from '../../constants/api-gateway.constant.js';
 import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 import { ProxyRequest } from '../models/proxy-request.model.js';
 import { PROXY_MIDDLEWARE } from '../decorators/proxy-middleware.decorator.js';
+import { stripExcludedHeaders } from '../helpers/request-sanitizer.helper.js';
 
 @Injectable()
 export class RequestService implements OnModuleInit {
@@ -27,7 +28,7 @@ export class RequestService implements OnModuleInit {
     }
 
     async handle(routerDetail: RouterDetail, request: IncomingMessage, proxyRequest: ProxyRequest) {
-        this.removeHeaders(proxyRequest);
+        this.removeHeaders(request, proxyRequest);
         for (const handler of this.headerHandlers) {
             if (!(await handler.handle(routerDetail, request, proxyRequest))) {
                 return false;
@@ -37,11 +38,17 @@ export class RequestService implements OnModuleInit {
         return true;
     }
 
-    private removeHeaders(proxyRequest: ProxyRequest) {
+    /**
+     * Remove gateway-owned headers from the incoming request (what is actually forwarded upstream)
+     * and from anything already staged on the proxy request, so only the middleware chain below
+     * can set them.
+     * @param {IncomingMessage} request The incoming request
+     * @param {ProxyRequest} proxyRequest The outgoing header overrides
+     */
+    private removeHeaders(request: IncomingMessage, proxyRequest: ProxyRequest) {
+        stripExcludedHeaders(request, this.apiGatewayOption.excludeHeaders);
         for (const excludeHeader of this.apiGatewayOption.excludeHeaders) {
-            if (proxyRequest.headers[excludeHeader]) {
-                proxyRequest.headers[excludeHeader] = '';
-            }
+            delete proxyRequest.headers[excludeHeader];
         }
     }
 

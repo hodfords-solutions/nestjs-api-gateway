@@ -24,6 +24,7 @@ import { ApiGatewayOption } from '../../types/api-gateway-option.type.js';
 import { ProxyRequest } from '../models/proxy-request.model.js';
 import { isReqUrlInWhitelist } from '../helpers/whitelist.helper.js';
 import { matchesPrefixSegment } from '../helpers/prefix.helper.js';
+import { normalizeRequestUrl, stripExcludedHeaders } from '../helpers/request-sanitizer.helper.js';
 import { ProxyServer } from '../../proxy/proxy-server.js';
 import { Dispatcher } from 'undici';
 import ResponseData = Dispatcher.ResponseData;
@@ -187,11 +188,26 @@ export class ProxyService implements OnModuleInit {
     }
 
     /**
+     * Canonicalize the request before ANY routing decision is made:
+     * - normalize the URL so dot segments / backslashes cannot make the bypass or router checks
+     *   see one path while the upstream receives another (path-traversal auth bypass);
+     * - drop caller-supplied copies of gateway-owned headers (`excludeHeaders`), so an identity
+     *   header can only reach an upstream service when a gateway middleware sets it.
+     * This runs for HTTP, static, bypass and WebSocket requests alike.
+     * @param {Request} request A request (mutated in place)
+     */
+    private sanitizeRequest(request: Request): void {
+        normalizeRequestUrl(request);
+        stripExcludedHeaders(request, this.apiGatewayOption.excludeHeaders);
+    }
+
+    /**
      * Determine how to process an incoming request by checking if it's for a static resource or a regular HTTP request.
      * @param {Request} request A request
      * @param {Response} response A response
      */
     async handleRequest(request: Request, response: Response): Promise<void> {
+        this.sanitizeRequest(request);
         if (this.requestService.isStaticRequest(request)) {
             await this.handleStaticRequest(response, request);
         } else {
@@ -218,6 +234,7 @@ export class ProxyService implements OnModuleInit {
      * @param {Buffer} head Upgraded-protocol bytes the HTTP parser consumed with the handshake
      */
     private async handleWebSocketRequest(request: Request, socket: Socket, head?: Buffer): Promise<void> {
+        this.sanitizeRequest(request);
         const serverName = this.getServerName(request.url);
         const proxyRequest = new ProxyRequest();
         if (!(await this.wsRequestService.handle(request, proxyRequest))) {
@@ -240,7 +257,7 @@ export class ProxyService implements OnModuleInit {
     private async handleHttpRequest(request: Request, response: Response): Promise<void> {
         const serverName = this.getServerName(request.url);
         const byPassRoutePrefixes = this.apiGatewayOption.bypassRoutePrefixes || [];
-        if (byPassRoutePrefixes.some((prefix) => request.url.startsWith(`${prefix}`))) {
+        if (byPassRoutePrefixes.some((prefix) => matchesPrefixSegment(request.url, prefix))) {
             await this.proxyServers[serverName].forwardRequest(request, response);
             return;
         }

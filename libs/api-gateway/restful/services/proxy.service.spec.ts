@@ -1,12 +1,13 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, type Mock } from 'vitest';
 // camelcase-keys (pulled in transitively via open-api.service) is unused on the code paths
 // under test, so stub it out.
 vi.mock('camelcase-keys', () => ({ __esModule: true, default: (value: unknown) => value }));
 
-import { ServiceUnavailableException } from '@nestjs/common';
-import type { Request } from 'express';
+import { ForbiddenException, MethodNotAllowedException, ServiceUnavailableException } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { ProxyService } from './proxy.service.js';
 import { ApiServiceDetail } from '../types/api-service.type.js';
+import { ProxyRequest } from '../models/proxy-request.model.js';
 
 /**
  * These tests exercise the routing/forwarding logic directly (getServerName, removePath,
@@ -263,5 +264,121 @@ describe('ProxyService backward compatibility (Polish, R15/SC-005)', () => {
         expect(asInternal(service).removePath('user-services', '/user-services/login')).toBe('/login');
         expect(asInternal(service).isDirectPrefixRequest('/oauth/x')).toBe(false);
         expect(() => service.getServerName('/oauth/x')).toThrow(ServiceUnavailableException);
+    });
+});
+
+describe('ProxyService request sanitization (auth bypass hardening)', () => {
+    type Internals = {
+        proxyServers: Record<string, { forwardRequest: Mock }>;
+        prefixServers: string[];
+        requestService: { isStaticRequest: Mock; handle: Mock };
+        throttlerService: Record<string, Mock>;
+    };
+
+    function createGateway(bypassRoutePrefixes: string[]): {
+        service: ProxyService;
+        forwardRequest: Mock;
+        getRouterDetail: Mock;
+        handle: Mock;
+    } {
+        const { service, swaggerService } = createService({ bypassRoutePrefixes, excludeHeaders: ['auth-user-id'] });
+        const internals = service as never as Internals;
+        internals.prefixServers = ['user-services'];
+        swaggerService.apiDocs = { 'user-services': { router: {} } };
+        const forwardRequest = vi.fn().mockResolvedValue(undefined);
+        internals.proxyServers = { 'user-services': { forwardRequest } };
+        internals.requestService.handle = vi.fn().mockResolvedValue(true);
+        internals.throttlerService = {
+            checkGlobalIpRequest: vi.fn().mockResolvedValue(undefined),
+            checkAnonymousIpRequest: vi.fn().mockResolvedValue(undefined),
+            checkLimitOfRequest: vi.fn().mockResolvedValue(undefined),
+            checkRouterHasCustomLimit: vi.fn().mockReturnValue(false)
+        };
+        return {
+            service,
+            forwardRequest,
+            getRouterDetail: swaggerService.getRouterDetail,
+            handle: internals.requestService.handle
+        };
+    }
+
+    const makeRequest = (url: string, headers: Record<string, string> = {}): Request =>
+        ({ url, method: 'GET', headers }) as unknown as Request;
+    const response = { on: vi.fn() } as unknown as Response;
+
+    it('still forwards a genuine bypass-prefix request without consulting the router', async () => {
+        const { service, forwardRequest, getRouterDetail } = createGateway(['/user-services/oidc']);
+        const request = makeRequest('/user-services/oidc/.well-known/openid-configuration');
+
+        await service.handleRequest(request, response);
+
+        expect(forwardRequest).toHaveBeenCalledTimes(1);
+        expect(getRouterDetail).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        '/user-services/oidc/../v1/admin',
+        '/user-services/oidc/%2e%2e/v1/admin',
+        '/user-services/oidc\\..\\v1/admin',
+        '/user-services/oidc/./x/../../v1/admin'
+    ])('does not let %s ride the public prefix to a protected route', async (url) => {
+        const { service, forwardRequest, getRouterDetail } = createGateway(['/user-services/oidc']);
+        getRouterDetail.mockReturnValue(undefined);
+        const request = makeRequest(url);
+
+        await expect(service.handleRequest(request, response)).rejects.toThrow(MethodNotAllowedException);
+
+        // The router was consulted with the canonical path the upstream would actually receive.
+        expect(request.url).toBe('/user-services/v1/admin');
+        expect(getRouterDetail).toHaveBeenCalledWith('user-services', 'GET', '/v1/admin');
+        expect(forwardRequest).not.toHaveBeenCalled();
+    });
+
+    it('runs the auth middleware for the normalized protected route', async () => {
+        const { service, forwardRequest, getRouterDetail, handle } = createGateway(['/user-services/oidc']);
+        getRouterDetail.mockReturnValue({ isBearerAuth: true, rateLimits: [] });
+        handle.mockResolvedValue(false);
+
+        await expect(service.handleRequest(makeRequest('/user-services/oidc/../v1/admin'), response)).rejects.toThrow(
+            ForbiddenException
+        );
+        expect(forwardRequest).not.toHaveBeenCalled();
+    });
+
+    it('matches bypass prefixes on whole path segments only', async () => {
+        const { service, getRouterDetail } = createGateway(['/user-services/oidc']);
+        getRouterDetail.mockReturnValue(undefined);
+
+        await expect(service.handleRequest(makeRequest('/user-services/oidc-admin/users'), response)).rejects.toThrow(
+            MethodNotAllowedException
+        );
+        expect(getRouterDetail).toHaveBeenCalledWith('user-services', 'GET', '/oidc-admin/users');
+    });
+
+    it('strips caller-supplied identity headers even on bypass routes', async () => {
+        const { service, forwardRequest } = createGateway(['/user-services/oidc']);
+        const request = makeRequest('/user-services/oidc/token', { 'auth-user-id': 'spoofed', host: 'gw' });
+
+        await service.handleRequest(request, response);
+
+        expect(request.headers).toEqual({ host: 'gw' });
+        expect(forwardRequest).toHaveBeenCalledWith(request, response);
+    });
+
+    it('strips caller-supplied identity headers before the auth middleware runs on normal routes', async () => {
+        const { service, forwardRequest, getRouterDetail, handle } = createGateway([]);
+        getRouterDetail.mockReturnValue({ isBearerAuth: true, rateLimits: [] });
+        const seen: unknown[] = [];
+        handle.mockImplementation(async (_detail: unknown, req: Request, proxyRequest: ProxyRequest) => {
+            seen.push({ ...req.headers });
+            proxyRequest.addHeader('auth-user-id', 'trusted');
+            return true;
+        });
+        const request = makeRequest('/user-services/v1/me', { 'auth-user-id': 'spoofed' });
+
+        await service.handleRequest(request, response);
+
+        expect(seen).toEqual([{}]);
+        expect(forwardRequest).toHaveBeenCalledWith(request, response, { headers: { 'auth-user-id': 'trusted' } });
     });
 });

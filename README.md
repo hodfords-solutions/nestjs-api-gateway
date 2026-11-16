@@ -107,6 +107,17 @@ export class AuthenticationMiddleware implements ProxyMiddlewareHandler {
     }
 }
 ```
+The headers listed in `excludeHeaders` are *gateway-owned*: the gateway deletes any copy of them that the caller
+sends (for every request — regular, bypass, static and WebSocket — and for MCP tool header arguments) before any
+middleware runs, so the only value an upstream service can ever receive is the one your middleware adds via
+`proxyRequest.addHeaders(...)`. Put every identity/trust header your services rely on (e.g. `auth-user-id`) in that
+list.
+
+Request paths are canonicalized (dot segments such as `..`, `%2e%2e` and backslashes are resolved) before the
+gateway decides which service, bypass prefix or route a request belongs to, so the path that is checked is always the
+path the upstream receives. `bypassRoutePrefixes` match on whole path segments: `/user-services/oidc` covers
+`/user-services/oidc/...` but not `/user-services/oidc-admin/...`.
+
 Similarly, you can create a WebSocket authentication handler by decorating the `@WsProxyMiddleware`. The `handle` method will be called before the request is processed. The `handle` method accepts the incoming request object and should return a boolean value indicating whether the request is authenticated.
 ```typescript
 @WsProxyMiddleware()
