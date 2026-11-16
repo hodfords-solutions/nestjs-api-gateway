@@ -25,6 +25,7 @@ function createService(overrides: {
     throttler?: Partial<{ checkLimitOfRequest: Mock }>;
     requestService?: Partial<{ handle: Mock }>;
     poolResponse?: { statusCode: number; body: AsyncIterable<Buffer> };
+    excludeHeaders?: string[];
 }): { service: McpToolExecutorService; poolRequest: Mock } {
     const toolRegistryService = { getToolByName: vi.fn().mockReturnValue(overrides.tool) };
     const throttlerService = {
@@ -37,7 +38,7 @@ function createService(overrides: {
         {} as never,
         throttlerService as never,
         requestService as never,
-        { apiServices: [] } as never
+        { apiServices: [], excludeHeaders: overrides.excludeHeaders ?? [] } as never
     );
 
     const poolRequest = vi.fn().mockResolvedValue(
@@ -109,6 +110,34 @@ describe('McpToolExecutorService.buildRequestOptions', () => {
         expect(options.headers.get('content-type')).toBe('application/json');
         expect(options.headers.get('auth-user-id')).toBe('123');
         expect(options.body).toBeUndefined();
+    });
+
+    it('never lets a tool argument supply or override a gateway-owned header', () => {
+        const { service } = createService({ tool: makeTool(), excludeHeaders: ['auth-user-id'] });
+        const proxyRequest = new ProxyRequest();
+        proxyRequest.addHeader('authUserId', 'trusted');
+
+        const options = asInternal(service).buildRequestOptions(
+            makeTool(),
+            { path_id: '42', 'header_auth-user-id': 'spoofed', header_locale: 'en' },
+            proxyRequest
+        );
+
+        expect(options.headers.get('auth-user-id')).toBe('trusted');
+        expect(options.headers.get('locale')).toBe('en');
+    });
+
+    it('drops an excluded header argument even when no middleware sets it', () => {
+        const { service } = createService({ tool: makeTool(), excludeHeaders: ['auth-user-id'] });
+
+        const options = asInternal(service).buildRequestOptions(
+            makeTool(),
+            { path_id: '42', 'header_Auth-User-Id': 'spoofed' },
+            new ProxyRequest()
+        );
+
+        expect(options.headers.has('auth-user-id')).toBe(false);
+        expect(options.headers.has('Auth-User-Id')).toBe(false);
     });
 
     it('serializes the body only for POST/PUT/PATCH', () => {
